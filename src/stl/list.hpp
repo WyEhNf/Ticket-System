@@ -5,23 +5,26 @@
 #include <iostream>
 
 namespace sjtu {
-
 template <typename T>
 class list {
 protected:
     class node {
     public:
         T val_;
-        node *nxt_, *pre_;
+        node* nxt_;
+        node* pre_;
+
         node() = delete;
-        node(const T &val, node *nxt, node *pre) : val_(val), nxt_(nxt), pre_(pre) {}
-        node(T &&val, node *nxt, node *pre) : val_(std::move(val)), nxt_(nxt), pre_(pre) {}
+        node(const T& val, node* nxt, node* pre) : val_(val), nxt_(nxt), pre_(pre) {}
+        node(T&& val, node* nxt, node* pre) : val_(std::move(val)), nxt_(nxt), pre_(pre) {}
     };
 
 protected:
     size_t size_;
-    node *head_, *tail_;
+    node* head_;
+    node* tail_;
 
+    // 插入一个新节点到指定位置前
     node* insert(node* pos, node* cur) {
         pos->pre_->nxt_ = cur;
         cur->pre_ = pos->pre_;
@@ -30,6 +33,7 @@ protected:
         return cur;
     }
 
+    // 删除指定节点
     node* erase(node* pos) {
         pos->pre_->nxt_ = pos->nxt_;
         pos->nxt_->pre_ = pos->pre_;
@@ -43,14 +47,16 @@ public:
         node* ptr_;
     public:
         explicit iterator(node* ptr = nullptr) : ptr_(ptr) {}
+
         iterator operator++(int) { auto tmp = *this; ptr_ = ptr_->nxt_; return tmp; }
         iterator& operator++() { ptr_ = ptr_->nxt_; return *this; }
         iterator operator--(int) { auto tmp = *this; ptr_ = ptr_->pre_; return tmp; }
         iterator& operator--() { ptr_ = ptr_->pre_; return *this; }
         T& operator*() const { return ptr_->val_; }
         T* operator->() const noexcept { return &ptr_->val_; }
-        bool operator==(const iterator &rhs) const { return ptr_ == rhs.ptr_; }
-        bool operator!=(const iterator &rhs) const { return ptr_ != rhs.ptr_; }
+
+        bool operator==(const iterator& rhs) const { return ptr_ == rhs.ptr_; }
+        bool operator!=(const iterator& rhs) const { return ptr_ != rhs.ptr_; }
     };
 
     class const_iterator {
@@ -58,19 +64,20 @@ public:
         const node* ptr_;
     public:
         explicit const_iterator(node* ptr = nullptr) : ptr_(ptr) {}
+
         const_iterator operator++(int) { auto tmp = *this; ptr_ = ptr_->nxt_; return tmp; }
         const_iterator& operator++() { ptr_ = ptr_->nxt_; return *this; }
         const_iterator operator--(int) { auto tmp = *this; ptr_ = ptr_->pre_; return tmp; }
         const_iterator& operator--() { ptr_ = ptr_->pre_; return *this; }
         const T& operator*() const { return ptr_->val_; }
         T* operator->() const noexcept { return &ptr_->val_; }
-        bool operator==(const iterator &rhs) const { return ptr_ == rhs.ptr_; }
-        bool operator!=(const iterator &rhs) const { return ptr_ != rhs.ptr_; }
+
+        bool operator==(const iterator& rhs) const { return ptr_ == rhs.ptr_; }
+        bool operator!=(const iterator& rhs) const { return ptr_ != rhs.ptr_; }
     };
 
     // 默认构造函数
-    list() {
-        size_ = 0;
+    list() : size_(0) {
         head_ = static_cast<node*>(operator new(sizeof(node)));
         tail_ = static_cast<node*>(operator new(sizeof(node)));
         head_->nxt_ = tail_;
@@ -79,7 +86,7 @@ public:
         tail_->nxt_ = nullptr;
     }
 
-    // 插入元素到特定位置之前
+    // 插入元素到特定位置前
     iterator insert(iterator pos, const T& value) {
         if (pos.ptr_ == head_ || pos.ptr_ == nullptr) {
             throw std::exception();
@@ -150,7 +157,6 @@ public:
     const_iterator cbegin() const { return const_iterator(head_->nxt_); }
     const_iterator cend() const { return const_iterator(tail_); }
 };
-
 }  // namespace sjtu
 
 #endif  // SJTU_LIST_HPP
