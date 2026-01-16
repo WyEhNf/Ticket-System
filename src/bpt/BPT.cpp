@@ -1,19 +1,19 @@
-#include <filesystem>
-#include <fstream> 
-#include "map.hpp"
-#include "list.hpp"
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
-#include <string>
-#include <map>
 #include <list>
+#include <map>
+#include <string>
+
+#include "list.hpp"
+#include "map.hpp"
+
 
 using namespace std;
 using namespace sjtu;
 
 /* ================= MemoryRiver ================= */
-
-
 
 struct MyString {
     static constexpr size_t MAX_LEN = 64;  // 最大字符长度
@@ -189,8 +189,10 @@ class BPlusTree {
         auto it = cache_map.find(pos);
         if (it != cache_map.end()) {
             // 命中：将缓存块移动到链表头部（LRU）
-            cache_list.splice(cache_list.begin(), cache_list, it->second);
-            return it->second->node;  // 返回缓存中的节点
+            cache_list.insert(cache_list.begin(),
+                              *it->second);  // 将当前元素插入到头部
+            cache_list.erase(it->second);    // 从原位置删除
+            return it->second->node;         // 返回缓存中的节点
         }
 
         // 2. 未命中：从磁盘读取
@@ -207,9 +209,9 @@ class BPlusTree {
         if (it != cache_map.end()) {
             // 如果缓存中已存在该节点，更新节点并将其移动到链表头部
             it->second->node = x;
-            it->second->dirty = true;  // 标记为脏数据
-            cache_list.splice(cache_list.begin(), cache_list,
-                              it->second);  // 移动到头部
+            it->second->dirty = true;                            // 标记为脏数据
+            cache_list.insert(cache_list.begin(), *it->second);  // 插入到头部
+            cache_list.erase(it->second);  // 删除原位置的节点
         } else {
             // 如果缓存中没有该节点，将其添加到缓存
             add_to_cache(x, pos);
@@ -226,9 +228,9 @@ class BPlusTree {
             if (last.dirty) {
                 river.update(last.node, last.pos);
             }
-            auto res=cache_map.find(last.pos);
-            cache_map.erase(res);  // 从哈希表中移除
-            cache_list.pop_back();      // 从链表中移除
+            auto res = cache_map.find(last.pos);
+            cache_map.erase(res);   // 从哈希表中移除
+            cache_list.pop_back();  // 从链表中移除
         }
 
         // 将新的节点插入到缓存的链表头部

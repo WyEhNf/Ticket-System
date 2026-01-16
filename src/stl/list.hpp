@@ -4,7 +4,6 @@
 #include <exception>
 #include <iostream>
 
-
 namespace sjtu {
 
 /**
@@ -413,29 +412,7 @@ class list {
         --size_;
         delete erase(head_->nxt_);
     }
-    void splice(iterator pos, list<T>& other) {
-        if (other.empty()) {
-            return;  // Nothing to splice
-        }
-
-        // Splice all elements from `other` before `pos`
-        node* first = other.head_->nxt_;
-        node* last = other.tail_->pre_;
-
-        // Disconnect the elements from `other`
-        other.head_->nxt_ = other.tail_;
-        other.tail_->pre_ = other.head_;
-        other.size_ = 0;
-
-        // Insert the range from `other` before `pos` in the current list
-        first->pre_ = pos.ptr_->pre_;
-        last->nxt_ = pos.ptr_;
-        pos.ptr_->pre_->nxt_ = first;
-        pos.ptr_->pre_ = last;
-
-        size_ += other.size_;
-        other.size_ = 0;  // `other` is now empty
-    }
+    
 };
 
 }  // namespace sjtu
