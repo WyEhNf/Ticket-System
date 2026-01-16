@@ -17,6 +17,9 @@ protected:
         node() = delete;
         node(const T& val, node* nxt, node* pre) : val_(val), nxt_(nxt), pre_(pre) {}
         node(T&& val, node* nxt, node* pre) : val_(std::move(val)), nxt_(nxt), pre_(pre) {}
+
+        // 提供访问函数来获取 ptr_
+        node* get_ptr() { return this; }
     };
 
 protected:
@@ -47,6 +50,8 @@ public:
         node* ptr_;
     public:
         explicit iterator(node* ptr = nullptr) : ptr_(ptr) {}
+
+        node* get_ptr() const { return ptr_; }  // 提供一个访问函数
 
         iterator operator++(int) { auto tmp = *this; ptr_ = ptr_->nxt_; return tmp; }
         iterator& operator++() { ptr_ = ptr_->nxt_; return *this; }
@@ -88,21 +93,21 @@ public:
 
     // 插入元素到特定位置前
     iterator insert(iterator pos, const T& value) {
-        if (pos.ptr_ == head_ || pos.ptr_ == nullptr) {
+        if (pos.get_ptr() == head_ || pos.get_ptr() == nullptr) {
             throw std::exception();
         }
         ++size_;
-        return iterator(insert(pos.ptr_, new node(value, nullptr, nullptr)));
+        return iterator(insert(pos.get_ptr(), new node(value, nullptr, nullptr)));
     }
 
     // 删除指定位置的元素
     iterator erase(iterator pos) {
-        if (pos.ptr_ == head_ || pos.ptr_ == tail_ || pos.ptr_ == nullptr) {
+        if (pos.get_ptr() == head_ || pos.get_ptr() == tail_ || pos.get_ptr() == nullptr) {
             throw std::exception();
         }
         --size_;
-        node* tmp = pos.ptr_->nxt_;
-        delete erase(pos.ptr_);
+        node* tmp = pos.get_ptr()->nxt_;
+        delete erase(pos.get_ptr());
         return iterator(tmp);
     }
 
@@ -157,6 +162,7 @@ public:
     const_iterator cbegin() const { return const_iterator(head_->nxt_); }
     const_iterator cend() const { return const_iterator(tail_); }
 };
-}  // namespace sjtu
+
+}  //  namespace sjtu
 
 #endif  // SJTU_LIST_HPP
