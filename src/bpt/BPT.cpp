@@ -9,28 +9,24 @@
 #include "list.hpp"
 #include "map.hpp"
 
+
 using namespace std;
 using namespace sjtu;
 
-/* ================= MemoryRiver ================= */
-
 struct MyString {
-    static constexpr size_t MAX_LEN = 64;  // 最大字符长度
-    char s[MAX_LEN + 1];                   // +1 留给 '\0'
+    static constexpr size_t MAX_LEN = 64;
+    char s[MAX_LEN + 1];
 
-    // 默认构造
     MyString() {
         s[0] = '\0';
     }
 
-    // 从 std::string 构造
     MyString(const std::string& str) {
         size_t len = str.size() < MAX_LEN ? str.size() : MAX_LEN;
         std::memcpy(s, str.data(), len);
         s[len] = '\0';
     }
 
-    // 赋值 std::string
     MyString& operator=(const std::string& str) {
         size_t len = str.size() < MAX_LEN ? str.size() : MAX_LEN;
         std::memcpy(s, str.data(), len);
@@ -38,12 +34,10 @@ struct MyString {
         return *this;
     }
 
-    // 转 std::string
     std::string to_string() const {
         return std::string(s);
     }
 
-    // 比较运算符
     bool operator==(const MyString& o) const {
         return std::strcmp(s, o.s) == 0;
     }
@@ -63,7 +57,6 @@ struct MyString {
         return !(*this < o);
     }
 
-    // 辅助函数：最小值
     static MyString min_value() {
         MyString ms;
         ms.s[0] = '\0';
@@ -124,23 +117,19 @@ class MemoryRiver {
         file.write(reinterpret_cast<const char*>(&t), sizeof(T));
     }
 };
+
 template <typename IndexType, typename ValueType, int ORDER = 32>
 class BPlusTree {
    private:
-    // 这个结构体用来表示 B+ Tree 中的每一个键值对
-    // 包括索引 `index`（通常是用户提供的键），和对应的值 `value`
-    // 为了支持高效比较，提供了 `operator==` 和 `operator<`
     struct Key {
-        MyString index;   // 索引键（字符串）
-        ValueType value;  // 相关的值
+        MyString index;
+        ValueType value;
 
-        // 判断两个 Key 是否相等：比较索引值和对应的值
         bool operator==(const Key& o) const {
             return std::string(index.s) == std::string(o.index.s) &&
                    value == o.value;
         }
 
-        // 比较两个 Key 的大小：首先比较索引，如果相等，再比较值
         bool operator<(const Key& o) const {
             if (!(index == o.index))
                 return std::string(index.s) < std::string(o.index.s);
@@ -148,69 +137,41 @@ class BPlusTree {
         }
     };
 
-    // 代表 B+ Tree 中的节点
-    // 每个节点可以是叶子节点或者内部节点，包含多个键值对和指向子节点的指针
     struct Node {
-        bool is_leaf = false;  // 是否为叶子节点
-        int key_cnt = 0;       // 当前节点中键值对的数量
-        int parent = -1;       // 父节点的索引，根节点的 parent 为 -1
-        int next = -1;         // 指向下一个叶子节点的指针，仅叶子节点有
-        Key keys[ORDER];       // 当前节点存储的键值对
-        int child[ORDER + 1];  // 指向子节点的指针，仅内部节点有
+        bool is_leaf = false;
+        int key_cnt = 0;
+        int parent = -1;
+        int next = -1;
+        Key keys[ORDER];
+        int child[ORDER + 1];
     };
 
-    MemoryRiver<Node, 2> river;  // 用于读取和写入节点数据，缓存了两个信息槽
+    MemoryRiver<Node, 2> river;
 
-    /* ================= LRU Cache 实现 ================= */
-
-    // 缓存块结构：每个缓存块代表磁盘中的一个节点，缓存为优化性能而设计。
-    // dirty 标志位表示该缓存块是否已经被修改，pos 表示该节点在磁盘中的位置
     struct CacheBlock {
-        Node node;           // 缓存的节点数据
-        bool dirty = false;  // 标志此块是否被修改过
-        int pos;             // 节点在磁盘中的位置
+        Node node;
+        bool dirty = false;
+        int pos;
     };
 
-    // 缓存容量：为了避免占用过多内存，设定最大缓存数量（可以根据内存限制调整）
-    static constexpr int CACHE_CAPACITY =
-        200;  // 最大缓存块数，减少磁盘 IO 的压力
+    static constexpr int CACHE_CAPACITY = 200;
 
-    // 缓存使用 LRU（Least Recently Used）策略：
-    // cache_list 保存缓存块，最近使用的块位于头部，最久未使用的块位于尾部。
-    // cache_map 用来通过磁盘位置快速查找缓存块
     sjtu::list<CacheBlock> cache_list;
     sjtu::map<int, typename sjtu::list<CacheBlock>::iterator> cache_map;
 
-    // 通过磁盘位置获取节点，首先检查缓存，如果缓存中存在该节点则返回缓存中的节点
-    // 否则从磁盘读取节点，并将该节点添加到缓存中
-    // 读取节点：优先从缓存取，命中则移动到 LRU 头部，未命中则从磁盘读并加入缓存
     Node node(int pos) {
         auto map_it = cache_map.find(pos);
         if (map_it != cache_map.end()) {
-            // 缓存命中
             auto old_list_it = map_it->second;
-
-            // 保存当前节点内容（因为后面 erase 会让 old_list_it 失效）
             Node current_node = old_list_it->node;
             bool current_dirty = old_list_it->dirty;
-
-            // 删除旧位置（让它从原位置移除）
             cache_list.erase(old_list_it);
-
-            // 插入到链表头部（最近使用）
             cache_list.push_front({current_node, current_dirty, pos});
-
-            // 更新 map 中的迭代器（指向新的头部位置）
             cache_map[pos] = cache_list.begin();
-
             return current_node;
         }
-
-        // 缓存未命中：从磁盘读取
         Node x;
         river.read(x, pos);
-
-        // 如果缓存满了，驱逐最久未使用的块
         if (cache_list.size() >= CACHE_CAPACITY) {
             CacheBlock& victim = cache_list.back();
             if (victim.dirty) {
@@ -219,34 +180,20 @@ class BPlusTree {
             cache_map.erase(cache_map.find(victim.pos));
             cache_list.pop_back();
         }
-
-        // 加入缓存（新读出的节点 dirty = false）
         cache_list.push_front({x, false, pos});
         cache_map[pos] = cache_list.begin();
-
         return x;
     }
 
-    // 写入节点：更新缓存中的节点（或加入新节点），并标记 dirty
     void write_node(const Node& x, int pos) {
         auto map_it = cache_map.find(pos);
         if (map_it != cache_map.end()) {
-            // 缓存命中
             auto old_list_it = map_it->second;
-
-            // 保存 dirty 状态（一般保持不变，但这里强制标记为 true）
             bool current_dirty = old_list_it->dirty;
-
-            // 删除旧位置
             cache_list.erase(old_list_it);
-
-            // 更新内容后插入到头部，并强制标记 dirty = true
             cache_list.push_front({x, true, pos});
-
-            // 更新 map
             cache_map[pos] = cache_list.begin();
         } else {
-            // 缓存未命中：当作新写入处理
             if (cache_list.size() >= CACHE_CAPACITY) {
                 CacheBlock& victim = cache_list.back();
                 if (victim.dirty) {
@@ -255,45 +202,34 @@ class BPlusTree {
                 cache_map.erase(cache_map.find(victim.pos));
                 cache_list.pop_back();
             }
-
-            // 加入缓存，标记 dirty = true
             cache_list.push_front({x, true, pos});
             cache_map[pos] = cache_list.begin();
         }
     }
 
-    // 将节点添加到缓存中，如果缓存已满则驱逐最久未使用的节点
     Node add_to_cache(const Node& x, int pos) {
-        // 如果缓存已满，驱逐最久未使用的节点
         if (cache_list.size() >= CACHE_CAPACITY) {
             CacheBlock& last = cache_list.back();
-            // 如果该节点是脏数据，则写回磁盘
             if (last.dirty) {
                 river.update(last.node, last.pos);
             }
             auto res = cache_map.find(last.pos);
-            cache_map.erase(res);   // 从哈希表中移除
-            cache_list.pop_back();  // 从链表中移除
+            cache_map.erase(res);
+            cache_list.pop_back();
         }
-
-        // 将新的节点插入到缓存的链表头部
         cache_list.push_front({x, false, pos});
-        cache_map[pos] = cache_list.begin();  // 更新哈希表
-        return x;                             // 返回新的节点
+        cache_map[pos] = cache_list.begin();
+        return x;
     }
 
-    // 强制将所有脏数据写回磁盘。通常在 B+ Tree
-    // 析构时调用，确保所有修改都保存到磁盘。
     void flush_all() {
-        // 遍历缓存中的所有块，将脏数据写回磁盘
         for (auto& block : cache_list) {
             if (block.dirty) {
-                river.update(block.node, block.pos);  // 写回磁盘
-                block.dirty = false;                  // 清除脏标志
+                river.update(block.node, block.pos);
+                block.dirty = false;
             }
         }
     }
-    /* ================================================== */
 
     int min_leaf_keys() const {
         return (ORDER + 1) / 2;
@@ -312,91 +248,68 @@ class BPlusTree {
     }
 
     int new_node(const Node& x) {
-        // 这里可以直接写入磁盘获取位置，也可以优化。
-        // 为了简单，我们先写入磁盘获取 pos，然后立即放入缓存。
         int pos = river.write(x);
-
-        // 立即加入缓存，避免后续马上读取时产生 IO
-        // 注意：river.write 已经写了，所以 dirty=false
         add_to_cache(x, pos);
-
         int cnt;
         river.get_info(cnt, 2);
         river.write_info(cnt + 1, 2);
         return pos;
     }
 
-    /* ========== 下面是原本的 B+ Tree 逻辑 (稍微保留原样) ========== */
-    // 逻辑部分直接复制您的原始代码即可，因为现在 node() 和 write_node()
-    // 已经被拦截处理了
-
-    // 查找包含指定 key 的叶子节点
-    // 从根节点开始，逐层向下查找，直到找到叶子节点
     int find_leaf(const Key& key) {
-        int u = root();  // 从根节点开始查找
+        int u = root();
         while (true) {
-            Node x = node(u);         // 获取当前节点
-            if (x.is_leaf) return u;  // 如果是叶子节点，返回该节点
+            Node x = node(u);
+            if (x.is_leaf) return u;
             int i = 0;
-            while (i < x.key_cnt && !(key < x.keys[i]))
-                i++;         // 查找匹配的子节点
-            u = x.child[i];  // 向下查找
+            while (i < x.key_cnt && !(key < x.keys[i])) i++;
+            u = x.child[i];
         }
     }
 
-    // 向叶子节点中插入一个新的键值对
     void insert_in_leaf(int u, const Key& key) {
         Node x = node(u);
         int i = x.key_cnt;
-        // 在叶子节点的键值对中插入，保持顺序
         while (i > 0 && key < x.keys[i - 1]) {
             x.keys[i] = x.keys[i - 1];
             i--;
         }
-        x.keys[i] = key;   // 插入新的键值对
-        x.key_cnt++;       // 增加键值对的数量
-        write_node(x, u);  // 写入缓存
-
-        // 如果节点已满，进行分裂
+        x.keys[i] = key;
+        x.key_cnt++;
+        write_node(x, u);
         if (x.key_cnt == ORDER) split_leaf(u);
     }
 
-    // 处理叶子节点的分裂：当叶子节点满了后，需要将它分裂成两个节点
     void split_leaf(int u) {
         Node x = node(u), y;
-        y.is_leaf = true;     // 新节点是叶子节点
-        y.parent = x.parent;  // 新节点的父节点和原节点相同
+        y.is_leaf = true;
+        y.parent = x.parent;
 
-        int mid = ORDER / 2;          // 分裂点在中间位置
-        y.key_cnt = x.key_cnt - mid;  // 新节点包含后半部分的键值对
+        int mid = ORDER / 2;
+        y.key_cnt = x.key_cnt - mid;
         for (int i = 0; i < y.key_cnt; i++) {
-            y.keys[i] = x.keys[mid + i];  // 将后半部分的键值对复制到新节点
+            y.keys[i] = x.keys[mid + i];
         }
 
-        x.key_cnt = mid;  // 原节点只保留前半部分
-        y.next = x.next;  // 新节点的 next 指针指向原节点的 next
-        x.next =
-            new_node(y);  // 在磁盘上为新节点分配位置，并将其添加到原节点的 next
-        write_node(x, u);       // 写回原节点
-        write_node(y, x.next);  // 写回新节点
+        x.key_cnt = mid;
+        y.next = x.next;
+        x.next = new_node(y);
+        write_node(x, u);
+        write_node(y, x.next);
 
-        insert_in_parent(u, y.keys[0],
-                         x.next);  // 在父节点中插入新的键值对（分裂产生的键）
+        insert_in_parent(u, y.keys[0], x.next);
     }
 
-    // 在父节点中插入新的键值对，如果是根节点分裂，创建新的根
     void insert_in_parent(int u, const Key& key, int v) {
         if (u == root()) {
-            // 如果是根节点，需要创建新的根节点
             Node r;
-            r.is_leaf = false;  // 新根节点是内部节点
+            r.is_leaf = false;
             r.key_cnt = 1;
-            r.keys[0] = key;       // 新根节点存储分裂产生的键
-            r.child[0] = u;        // 原来的根节点成为新根的左子树
-            r.child[1] = v;        // 新节点成为新根的右子树
-            int rp = new_node(r);  // 创建新根节点
+            r.keys[0] = key;
+            r.child[0] = u;
+            r.child[1] = v;
+            int rp = new_node(r);
 
-            // 更新原来两个子节点的父节点为新根
             Node cu = node(u);
             cu.parent = rp;
             write_node(cu, u);
@@ -404,12 +317,12 @@ class BPlusTree {
             cv.parent = rp;
             write_node(cv, v);
 
-            set_root(rp);  // 更新树的根节点
+            set_root(rp);
             return;
         }
 
         Node cur = node(u);
-        int p = cur.parent;  // 获取父节点
+        int p = cur.parent;
         Node par = node(p);
 
         int i = par.key_cnt;
@@ -418,73 +331,67 @@ class BPlusTree {
             par.child[i + 1] = par.child[i];
             i--;
         }
-        par.keys[i] = key;     // 将新键插入到父节点
-        par.child[i + 1] = v;  // 新节点成为父节点的右子树
-        par.key_cnt++;         // 更新父节点的键数量
+        par.keys[i] = key;
+        par.child[i + 1] = v;
+        par.key_cnt++;
 
         Node cv = node(v);
         cv.parent = p;
         write_node(cv, v);
-        write_node(par, p);  // 更新父节点
+        write_node(par, p);
 
-        if (par.key_cnt == ORDER)
-            split_internal(p);  // 如果父节点满了，进行分裂
+        if (par.key_cnt == ORDER) split_internal(p);
     }
 
-    // 分裂内部节点：当内部节点的键数超过限制时，需要进行分裂
     void split_internal(int u) {
         Node x = node(u), y;
-        y.is_leaf = false;    // 新节点是内部节点
-        y.parent = x.parent;  // 新节点的父节点和原节点相同
+        y.is_leaf = false;
+        y.parent = x.parent;
 
-        int mid = ORDER / 2;   // 分裂点
-        Key up = x.keys[mid];  // 保留中间的键，提升到父节点
+        int mid = ORDER / 2;
+        Key up = x.keys[mid];
 
-        y.key_cnt = x.key_cnt - mid - 1;  // 新节点包含后半部分的键
+        y.key_cnt = x.key_cnt - mid - 1;
         for (int i = 0; i < y.key_cnt; i++) {
-            y.keys[i] = x.keys[mid + 1 + i];  // 将右半部分的键值对复制到新节点
+            y.keys[i] = x.keys[mid + 1 + i];
         }
 
         for (int i = 0; i <= y.key_cnt; i++) {
-            y.child[i] = x.child[mid + 1 + i];  // 复制子节点
+            y.child[i] = x.child[mid + 1 + i];
             Node c = node(y.child[i]);
-            c.parent = new_node(y);  // 新分配的节点应更新子节点的父节点
+            c.parent = new_node(y);
         }
 
-        x.key_cnt = mid;      // 更新原节点的键数量
-        int v = new_node(y);  // 为新节点分配磁盘位置
-        // 更新子节点的父节点信息
+        x.key_cnt = mid;
+        int v = new_node(y);
         for (int i = 0; i <= y.key_cnt; i++) {
             Node c = node(y.child[i]);
             c.parent = v;
             write_node(c, y.child[i]);
         }
 
-        write_node(x, u);            // 更新原节点
-        write_node(y, v);            // 写回新节点
-        insert_in_parent(u, up, v);  // 将中间的键提升到父节点
+        write_node(x, u);
+        write_node(y, v);
+        insert_in_parent(u, up, v);
     }
 
-    // 修复叶子节点：处理删除后叶子节点的下溢问题
     void fix_leaf(int u) {
         Node cur = node(u);
         int p = cur.parent;
         Node par = node(p);
         int idx = 0;
-        while (par.child[idx] != u) idx++;  // 查找当前节点在父节点中的位置
+        while (par.child[idx] != u) idx++;
 
-        // 如果左边的兄弟节点有足够的键，则进行借位
         if (idx > 0) {
             int l = par.child[idx - 1];
             Node left = node(l);
             if (left.key_cnt > min_leaf_keys()) {
-                // 借位操作：将左边的最后一个键借到当前节点
                 for (int i = cur.key_cnt; i > 0; i--)
                     cur.keys[i] = cur.keys[i - 1];
                 cur.keys[0] = left.keys[left.key_cnt - 1];
                 cur.key_cnt++;
                 left.key_cnt--;
-                par.keys[idx - 1] = cur.keys[0];  // 更新父节点的键
+                par.keys[idx - 1] = cur.keys[0];
                 write_node(left, l);
                 write_node(cur, u);
                 write_node(par, p);
@@ -492,17 +399,15 @@ class BPlusTree {
             }
         }
 
-        // 如果右边的兄弟节点有足够的键，则进行借位
         if (idx + 1 <= par.key_cnt) {
             int r = par.child[idx + 1];
             Node right = node(r);
             if (right.key_cnt > min_leaf_keys()) {
-                // 借位操作：将右边的第一个键借到当前节点
                 cur.keys[cur.key_cnt++] = right.keys[0];
                 for (int i = 0; i + 1 < right.key_cnt; i++)
                     right.keys[i] = right.keys[i + 1];
                 right.key_cnt--;
-                par.keys[idx] = right.keys[0];  // 更新父节点的键
+                par.keys[idx] = right.keys[0];
                 write_node(right, r);
                 write_node(cur, u);
                 write_node(par, p);
@@ -510,62 +415,52 @@ class BPlusTree {
             }
         }
 
-        // 如果左右兄弟节点都没有足够的键，则进行合并
         if (idx > 0)
             merge_leaf(par.child[idx - 1], u, idx - 1);
         else
             merge_leaf(u, par.child[idx + 1], idx);
     }
 
-    // 合并叶子节点：当一个叶子节点的键数过少时，从兄弟节点合并键值对
     void merge_leaf(int l, int r, int sep) {
         Node left = node(l);
         Node right = node(r);
         Node par = node(left.parent);
 
-        // 将右兄弟的所有键值对移到左节点中
         for (int i = 0; i < right.key_cnt; ++i)
             left.keys[left.key_cnt + i] = right.keys[i];
-        left.key_cnt += right.key_cnt;  // 更新左节点的键数
-        left.next = right.next;         // 更新 next 指针
-        // 从父节点中移除合并的键
+        left.key_cnt += right.key_cnt;
+        left.next = right.next;
         for (int i = sep; i + 1 < par.key_cnt; ++i) {
             par.keys[i] = par.keys[i + 1];
             par.child[i + 1] = par.child[i + 2];
         }
-        par.key_cnt--;  // 更新父节点的键数
+        par.key_cnt--;
 
-        write_node(left, l);           // 更新左节点
-        write_node(par, left.parent);  // 更新父节点
+        write_node(left, l);
+        write_node(par, left.parent);
 
-        // 如果父节点需要修复，递归修复
         if (par.parent != -1 && par.key_cnt < min_leaf_keys())
             fix_internal(left.parent);
 
-        // 如果父节点已经空了且它是根节点，更新树根
         if (par.key_cnt == 0 && left.parent == root()) {
-            set_root(l);  // 设置新的根节点
+            set_root(l);
             left.parent = -1;
-            write_node(left, l);  // 更新左节点
+            write_node(left, l);
         }
     }
 
-    // 修复内部节点：处理删除后内部节点的下溢问题
     void fix_internal(int u) {
         Node x = node(u);
-        if (x.parent == -1 || x.key_cnt >= min_internal_keys())
-            return;  // 如果是根节点或者节点键数正常，则不需要修复
+        if (x.parent == -1 || x.key_cnt >= min_internal_keys()) return;
 
         Node par = node(x.parent);
         int idx = 0;
-        while (par.child[idx] != u) idx++;  // 查找当前节点在父节点中的位置
+        while (par.child[idx] != u) idx++;
 
-        // 如果左边的兄弟节点有足够的键，则进行借位
         if (idx > 0) {
             int l = par.child[idx - 1];
             Node left = node(l);
             if (left.key_cnt > min_internal_keys()) {
-                // 借位操作：将左边的最后一个键借到当前节点
                 for (int i = x.key_cnt; i > 0; i--) x.keys[i] = x.keys[i - 1];
                 for (int i = x.key_cnt + 1; i > 0; i--)
                     x.child[i] = x.child[i - 1];
@@ -584,7 +479,6 @@ class BPlusTree {
             }
         }
 
-        // 如果右边的兄弟节点有
         if (idx < par.key_cnt) {
             int r = par.child[idx + 1];
             Node right = node(r);
@@ -613,50 +507,43 @@ class BPlusTree {
             merge_internal(u, par.child[idx + 1], idx);
     }
 
-    // 合并内部节点：当内部节点的键数过少时，从兄弟节点合并键值对
     void merge_internal(int l, int r, int sep) {
-        Node left = node(l);           // 获取左兄弟节点
-        Node right = node(r);          // 获取右兄弟节点
-        Node par = node(left.parent);  // 获取父节点
+        Node left = node(l);
+        Node right = node(r);
+        Node par = node(left.parent);
 
-        left.keys[left.key_cnt++] =
-            par.keys[sep];  // 将父节点的分隔键插入到左节点
-        // 将右兄弟节点的所有键值对复制到左节点
+        left.keys[left.key_cnt++] = par.keys[sep];
         for (int i = 0; i < right.key_cnt; i++) {
             left.keys[left.key_cnt + i] = right.keys[i];
         }
 
-        // 将右兄弟节点的所有子节点指针复制到左节点
         for (int i = 0; i <= right.key_cnt; i++) {
             left.child[left.key_cnt + i] = right.child[i];
             Node c = node(right.child[i]);
-            c.parent = l;                   // 更新子节点的父节点
-            write_node(c, right.child[i]);  // 写回子节点
+            c.parent = l;
+            write_node(c, right.child[i]);
         }
 
-        left.key_cnt += right.key_cnt;  // 更新左节点的键数量
+        left.key_cnt += right.key_cnt;
 
-        // 从父节点中移除分隔键，并更新父节点的子节点指针
         for (int i = sep; i + 1 < par.key_cnt; i++) {
             par.keys[i] = par.keys[i + 1];
             par.child[i + 1] = par.child[i + 2];
         }
-        par.key_cnt--;  // 更新父节点的键数量
+        par.key_cnt--;
 
-        write_node(left, l);           // 写回左节点
-        write_node(par, left.parent);  // 写回父节点
+        write_node(left, l);
+        write_node(par, left.parent);
 
-        // 如果父节点是根节点并且键数量为零，则更新树的根节点
         if (par.parent == -1 && par.key_cnt == 0) {
-            set_root(l);          // 设置新的根节点
-            left.parent = -1;     // 设置左节点为新的根节点
-            write_node(left, l);  // 写回左节点
+            set_root(l);
+            left.parent = -1;
+            write_node(left, l);
             return;
         }
 
-        // 如果父节点不是根节点，并且父节点键数量小于最小阈值，则修复父节点
         if (par.parent != -1 && par.key_cnt < min_internal_keys()) {
-            fix_internal(left.parent);  // 修复父节点
+            fix_internal(left.parent);
         }
     }
 
@@ -674,7 +561,6 @@ class BPlusTree {
         }
     }
 
-    // 析构函数：非常重要！必须把缓存里的脏数据写回磁盘
     ~BPlusTree() {
         flush_all();
     }
@@ -731,9 +617,6 @@ class BPlusTree {
 };
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    // ... main 函数保持不变 ...
     BPlusTree<MyString, int> db;
     int n;
     cin >> n;

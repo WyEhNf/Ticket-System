@@ -77,8 +77,6 @@ public:
         delete head_;
         delete tail_;
     }
-
-    // 禁用拷贝，防止浅拷贝导致双删（B+树中不需要拷贝list）
     list(const list&) = delete;
     list& operator=(const list&) = delete;
 
