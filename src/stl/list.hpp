@@ -1,252 +1,408 @@
 #ifndef SJTU_LIST_HPP
 #define SJTU_LIST_HPP
-
 #include <iostream>
-using namespace std;
+
+#include <cstddef>
+#include <exception>
 
 namespace sjtu {
 
-template <typename T>
+/**
+ * a data container like std::list
+ * allocate random memory addresses for data and they are doubly-linked in a
+ * list.
+ */
+template<typename T>
 class list {
-private:
-    // 内部节点定义
-    template <typename U>
-    struct ListNode {
-        T data;          // 存储数据
-        ListNode* next;  // 指向下一个节点的指针
-        ListNode* prev;  // 指向前一个节点的指针
+protected:
+  class node {
+  public:
+    /**
+     * add data members and constructors & destructor
+     */
+    T val_;
+    node *nxt_, *pre_;
+    node() = delete;
+    node(const T &val, node *nxt, node *pre) : val_(val), nxt_(nxt), pre_(pre) {}
+    node(T &&val, node *nxt, node *pre) : val_(std::move(val)), nxt_(nxt), pre_(pre) {}
+  };
 
-        // 构造函数
-        ListNode(T val) : data(val), next(nullptr), prev(nullptr) {}
-    };
+protected:
+  /**
+   * add data members for linked list as protected members
+   */
+  size_t size_;
+  node *head_, *tail_;
+  /**
+   * insert node cur before node pos
+   * return the inserted node cur
+   */
+  node *insert(node *pos, node *cur) {
+    pos->pre_->nxt_ = cur;
+    cur->pre_ = pos->pre_;
+    pos->pre_ = cur;
+    cur->nxt_ = pos;
+   return cur;
+  }
 
-    ListNode<T>* head;  // 链表的头指针
-    ListNode<T>* tail;  // 链表的尾指针
-    int size_;           // 链表的元素个数
+  /**
+   * remove node pos from list (no need to delete the node)
+   * return the removed node pos
+   */
+  node *erase(node *pos) {
+    pos->pre_->nxt_ = pos->nxt_;
+    pos->nxt_->pre_ = pos->pre_;
+    return pos;
+  }
 
 public:
-    // 构造函数
-    list() : head(nullptr), tail(nullptr), size_(0) {}
+  class const_iterator;
 
-    // 析构函数
-    ~list() {
-        clear();
+  class iterator {
+    friend class list;
+    friend class const_iterator;
+  private:
+    /**
+     * TODO add data members
+     *   just add whatever you want.
+     */
+    node *ptr_;
+
+  public:
+    explicit iterator(node *ptr = nullptr) : ptr_(ptr) {}
+    iterator operator++(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->nxt_;
+      return tmp;
     }
 
-    // 在链表尾部插入元素
-    void push_back(T val) {
-        ListNode<T>* newListNode = new ListNode<T>(val);
-        if (tail) {
-            tail->next = newListNode;
-            newListNode->prev = tail;
-        } else {
-            head = newListNode;  // 链表为空时，新节点就是头节点
-        }
-        tail = newListNode;
-        size_++;
+    iterator &operator++() {
+      ptr_ = ptr_->nxt_;
+      return *this;
     }
 
-    // 在链表头部插入元素
-    void push_front(T val) {
-        ListNode<T>* newListNode = new ListNode<T>(val);
-        if (head) {
-            newListNode->next = head;
-            head->prev = newListNode;
-        } else {
-            tail = newListNode;  // 链表为空时，新节点就是尾节点
-        }
-        head = newListNode;
-        size_++;
+    iterator operator--(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->pre_;
+      return tmp;
     }
 
-    // 删除链表的头节点
-    void pop_front() {
-        if (head) {
-            ListNode<T>* temp = head;
-            head = head->next;
-            if (head) head->prev = nullptr; // 如果链表不为空，更新头节点的prev指针
-            else tail = nullptr;  // 如果链表为空，尾指针也应为 nullptr
-            delete temp;
-            size_--;
-        }
+    iterator &operator--() {
+      ptr_ = ptr_->pre_;
+      return *this;
     }
 
-    // 删除链表的尾节点
-    void pop_back() {
-        if (tail) {
-            if (head == tail) {  // 只有一个节点的情况
-                delete head;
-                head = tail = nullptr;
-            } else {
-                ListNode<T>* temp = tail;
-                tail = tail->prev;
-                tail->next = nullptr;
-                delete temp;
-            }
-            size_--;
-        }
+    /**
+     * TODO *it
+     * throw std::exception if iterator is invalid
+     */
+    T &operator*() const {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return ptr_->val_;
     }
 
-    // 查找链表中的元素
-    ListNode<T>* find(T val) {
-        ListNode<T>* temp = head;
-        while (temp) {
-            if (temp->data == val) return temp;
-            temp = temp->next;
-        }
-        return nullptr;  // 没有找到
+    /**
+     * TODO it->field
+     * throw std::exception if iterator is invalid
+     */
+    T *operator->() const noexcept {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return &ptr_->val_;
     }
 
-    // 清空链表
-    void clear() {
-        while (head) {
-            pop_front();
-        }
+    /**
+     * a operator to check whether two iterators are same (pointing to the same
+     * memory).
+     */
+    bool operator==(const iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
     }
 
-    // 输出链表元素
-    void print() {
-        ListNode<T>* temp = head;
-        while (temp) {
-            cout << temp->data << " ";
-            temp = temp->next;
-        }
-        cout << endl;
+    bool operator==(const const_iterator &rhs) const {
+     return ptr_ == rhs.ptr_;
     }
 
-    // 获取链表的大小
-    int size() const {
-        return size_;
+    /**
+     * some other operator for iterator.
+     */
+    bool operator!=(const iterator &rhs) const {
+      return !operator==(rhs);
     }
 
-    // 判断链表是否为空
-    bool empty() const {
-        return size_ == 0;
+    bool operator!=(const const_iterator &rhs) const {
+      return !operator==(rhs);
+    }
+  };
+
+  /**
+   * TODO
+   * has same function as iterator, just for a const object.
+   * should be able to construct from an iterator.
+   */
+  class const_iterator {
+    friend class iterator;
+  private:
+    const node *ptr_;
+
+  public:
+    explicit const_iterator(node *ptr = nullptr) : ptr_(ptr) {}
+
+    const_iterator operator++(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->nxt_;
+      return tmp;
     }
 
-    // 返回指向链表第一个元素的迭代器
-    class iterator {
-    private:
-        ListNode<T>* ptr_;  // 当前指针
-
-    public:
-        // 构造函数
-        iterator(ListNode<T>* ptr = nullptr) : ptr_(ptr) {}
-
-        // 前进
-        iterator& operator++() {
-            if (ptr_) {
-                ptr_ = ptr_->next;
-            }
-            return *this;
-        }
-
-        // 后退
-        iterator& operator--() {
-            if (ptr_) {
-                ptr_ = ptr_->prev;
-            }
-            return *this;
-        }
-
-        // 前进（返回迭代器，适用于后缀递增）
-        iterator operator++(int) {
-            iterator tmp(*this);
-            ++(*this);
-            return tmp;
-        }
-
-        // 后退（返回迭代器，适用于后缀递减）
-        iterator operator--(int) {
-            iterator tmp(*this);
-            --(*this);
-            return tmp;
-        }
-
-        // 解引用操作符
-        T& operator*() const {
-            return ptr_->data;
-        }
-
-        // `->` 操作符，返回当前指针的地址
-        T* operator->() const {
-            return &(ptr_->data);
-        }
-
-        // 比较迭代器是否相等
-        bool operator==(const iterator& other) const {
-            return ptr_ == other.ptr_;
-        }
-
-        bool operator!=(const iterator& other) const {
-            return ptr_ != other.ptr_;
-        }
-
-        // 获取当前节点
-        ListNode<T>* getNode() const { return ptr_; }
-    };
-
-    // 返回指向头部的迭代器
-    iterator begin() {
-        return iterator(head);
+    const_iterator &operator++() {
+      ptr_ = ptr_->nxt_;
+      return *this;
     }
 
-    T& back() {
-        return tail->data;
+    const_iterator operator--(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->pre_;
+      return tmp;
     }
 
-    // 返回指向尾部的迭代器（尾后迭代器）
-    iterator end() {
-        return iterator(nullptr);  // 尾后迭代器
+    const_iterator &operator--() {
+      ptr_ = ptr_->pre_;
+      return *this;
     }
 
-    // splice: 将源链表中的某个元素（或范围）插入到当前链表的指定位置
-    void splice(iterator position, list<T>& other, iterator node_to_move) {
-        ListNode<T>* ListNode_to_move = node_to_move.getNode();
-        if (!ListNode_to_move || !other.head) return;
-
-        // 找到 ListNode_to_move 的前一个节点
-        ListNode<T>* prev = nullptr;
-        ListNode<T>* temp = other.head;
-        while (temp && temp != ListNode_to_move) {
-            prev = temp;
-            temp = temp->next;
-        }
-
-        if (temp == nullptr) return; // 找不到节点
-
-        // 将 ListNode_to_move 从源链表中移除
-        if (prev) {
-            prev->next = ListNode_to_move->next;
-        } else {
-            other.head = ListNode_to_move->next; // 如果 ListNode_to_move 是头节点
-        }
-        if (other.tail == ListNode_to_move) {
-            other.tail = prev; // 如果 ListNode_to_move 是尾节点
-        }
-
-        // 将 ListNode_to_move 插入到目标链表的 position 前面
-        ListNode_to_move->next = position.getNode();
-        if (position == begin()) {
-            head = ListNode_to_move;
-        } else {
-            ListNode<T>* p = head;
-            while (p && p->next != position.getNode()) {
-                p = p->next;
-            }
-            if (p) p->next = ListNode_to_move;
-        }
-
-        // 更新尾指针
-        if (!ListNode_to_move->next) {
-            tail = ListNode_to_move;
-        }
-
-        size_++;
-        other.size_--;
+    const T &operator*() const {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return ptr_->val_;
     }
+
+    T *operator->() const noexcept {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return &ptr_->val_;
+    }
+
+    bool operator==(const iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
+    }
+
+    bool operator==(const const_iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
+    }
+
+    bool operator!=(const iterator &rhs) const {
+      return !operator==(rhs);
+    }
+
+    bool operator!=(const const_iterator &rhs) const {
+      return !operator==(rhs);
+    }
+  };
+
+  /**
+   * TODO Constructs
+   * Atleast two: default constructor, copy constructor
+   */
+  list() {
+    size_ = 0;
+    head_ = static_cast<node *>(operator new(sizeof(node)));
+    tail_ = static_cast<node *>(operator new(sizeof(node)));
+    head_->nxt_ = tail_;
+    head_->pre_ = nullptr;
+    tail_->pre_ = head_;
+    tail_->nxt_ = nullptr;
+  }
+
+  list(const list &other) {
+    size_ = other.size_;
+    head_ = static_cast<node *>(operator new(sizeof(node)));
+    tail_ = static_cast<node *>(operator new(sizeof(node)));
+    head_->nxt_ = tail_;
+    head_->pre_ = nullptr;
+    tail_->pre_ = head_;
+    tail_->nxt_ = nullptr;
+
+    node *cur = other.head_->nxt_;
+    while (cur != other.tail_) {
+      insert(tail_, new node(*cur));
+      cur = cur->nxt_;
+    }
+  }
+
+  /**
+   * TODO Destructor
+   */
+  virtual ~list() {
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
+    }
+    operator delete(head_);
+    operator delete(tail_);
+  }
+
+  /**
+   * TODO Assignment operator
+   */
+  list &operator=(const list &other) {
+    if (&other == this) {
+      return *this;
+    }
+    size_ = other.size_;
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
+    }
+    node *cur = other.head_->nxt_;
+    while (cur != other.tail_) {
+      insert(tail_, new node(*cur));
+      cur = cur->nxt_;
+    }
+    return *this;
+  }
+
+  /**
+   * access the first / last element
+   * throw container_is_empty when the container is empty.
+   */
+  const T &front() const {
+    if (head_->nxt_ == tail_) {
+      throw std::exception();
+    }
+    return head_->nxt_->val_;
+  }
+
+  const T &back() const {
+    if (head_->nxt_ == tail_) {
+      throw std::exception();
+    }
+    return tail_->pre_->val_;
+  }
+
+  /**
+   * returns an iterator to the beginning.
+   */
+  iterator begin() {
+    return iterator(head_->nxt_);
+  }
+
+  const_iterator cbegin() const {
+    return const_iterator(head_->nxt_);
+  }
+
+  /**
+   * returns an iterator to the end.
+   */
+  iterator end() {
+    return iterator(tail_);
+  }
+
+  const_iterator cend() const {
+    return const_iterator(tail_);
+  }
+
+  /**
+   * checks whether the container is empty.
+   */
+  virtual bool empty() const {
+    return head_->nxt_ == tail_;
+  }
+
+  /**
+   * returns the number of elements
+   */
+  virtual size_t size() const {
+    return size_;
+  }
+
+  /**
+   * clears the contents
+   */
+  virtual void clear() {
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
+    }
+    size_ = 0;
+  }
+
+  /**
+   * insert value before pos (pos may be the end() iterator)
+   * return an iterator pointing to the inserted value
+   * throw if the iterator is invalid
+   */
+  // virtual iterator insert(iterator pos, const T &value) {
+  //   if (pos.ptr_ == head_ || pos.ptr_ == nullptr) {
+  //     throw std::exception();
+  //   }
+  //   ++size_;
+  //   return iterator(insert(pos.ptr_, new node(value, nullptr, nullptr)));
+  // }
+
+  /**
+   * remove the element at pos (the end() iterator is invalid)
+   * returns an iterator pointing to the following element, if pos pointing to
+   * the last element, end() will be returned. throw if the container is empty,
+   * the iterator is invalid
+   */
+  virtual iterator erase(iterator pos) {
+    if (pos.ptr_ == head_ || pos.ptr_ == tail_ || pos.ptr_ == nullptr) {
+      throw std::exception();
+    }
+    --size_;
+    node *tmp = pos.ptr_->nxt_;
+    delete erase(pos.ptr_);
+    return iterator(tmp);
+  }
+
+  /**
+   * adds an element to the end
+   */
+  void push_back(const T &value) {
+    ++size_;
+    insert(tail_, new node(value, nullptr, nullptr));
+  }
+
+  void emplace_back(T &&value) {
+    ++size_;
+    insert(tail_, new node(std::move(value), nullptr, nullptr));
+  }
+
+  /**
+   * removes the last element
+   * throw when the container is empty.
+   */
+  void pop_back() {
+    if (size_ == 0) {
+      throw std::exception();
+    }
+    --size_;
+    delete erase(tail_->pre_);
+  }
+
+  /**
+   * inserts an element to the beginning.
+   */
+  void push_front(const T &value) {
+    ++size_;
+    insert(head_->nxt_, new node(value, nullptr, nullptr));
+  }
+
+  /**
+   * removes the first element.
+   * throw when the container is empty.
+   */
+  void pop_front() {
+    if (size_ == 0) {
+      throw std::exception();
+    }
+    --size_;
+    delete erase(head_->nxt_);
+  }
 };
 
-}
+} // namespace sjtu
 
-#endif
+#endif // SJTU_LIST_HPP
