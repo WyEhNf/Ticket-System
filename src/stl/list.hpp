@@ -190,9 +190,11 @@ public:
     iterator begin() {
         return iterator(head);
     }
+
     T& back() {
         return tail->data;
     }
+
     // 返回指向尾部的迭代器（尾后迭代器）
     iterator end() {
         return iterator(nullptr);  // 尾后迭代器
