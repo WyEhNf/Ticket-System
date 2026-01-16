@@ -184,38 +184,71 @@ class BPlusTree {
 
     // 通过磁盘位置获取节点，首先检查缓存，如果缓存中存在该节点则返回缓存中的节点
     // 否则从磁盘读取节点，并将该节点添加到缓存中
-    Node node(int pos) {
-        // 1. 检查缓存
-        auto it = cache_map.find(pos);
-        if (it != cache_map.end()) {
-            // 命中：将缓存块移动到链表头部（LRU）
-            cache_list.splice(cache_list.begin(), cache_list, it->second);
-            return it->second->node;  // 返回缓存中的节点
+   Node node(int pos) {
+    // 1. 检查缓存
+    auto it = cache_map.find(pos);
+    if (it != cache_map.end()) {
+        // 命中：将缓存块移动到链表头部（LRU）
+        // 手动将命中的节点移动到链表头部
+        Node* targetNode = it->second;  // 获取缓存节点
+        // 先断开 targetNode 的原有链表连接
+        if (targetNode->pre_ != nullptr) {
+            targetNode->pre_->nxt_ = targetNode->nxt_;
         }
+        if (targetNode->nxt_ != nullptr) {
+            targetNode->nxt_->pre_ = targetNode->pre_;
+        }
+        // 将 targetNode 插入到链表头部
+        targetNode->nxt_ = head_->nxt_;
+        targetNode->pre_ = head_;
+        if (head_->nxt_ != nullptr) {
+            head_->nxt_->pre_ = targetNode;
+        }
+        head_->nxt_ = targetNode;
 
-        // 2. 未命中：从磁盘读取
-        Node x;
-        river.read(x, pos);  // 通过 river 从磁盘读取节点
-
-        // 3. 将新读取的节点添加到缓存
-        return add_to_cache(x, pos);  // 添加到缓存并返回
+        return targetNode->node;  // 返回缓存中的节点
     }
 
-    // 将节点写入缓存（并标记为 dirty），如果缓存已满则驱逐最久未使用的节点
-    void write_node(const Node& x, int pos) {
-        auto it = cache_map.find(pos);
-        if (it != cache_map.end()) {
-            // 如果缓存中已存在该节点，更新节点并将其移动到链表头部
-            it->second->node = x;
-            it->second->dirty = true;  // 标记为脏数据
-            cache_list.splice(cache_list.begin(), cache_list,
-                              it->second);  // 移动到头部
-        } else {
-            // 如果缓存中没有该节点，将其添加到缓存
-            add_to_cache(x, pos);
-            cache_list.begin()->dirty = true;  // 新加入的节点标记为脏数据
+    // 2. 未命中：从磁盘读取
+    Node x;
+    river.read(x, pos);  // 通过 river 从磁盘读取节点
+
+    // 3. 将新读取的节点添加到缓存
+    return add_to_cache(x, pos);  // 添加到缓存并返回
+}
+
+// 将节点写入缓存（并标记为脏），如果缓存已满则驱逐最久未使用的节点
+void write_node(const Node& x, int pos) {
+    auto it = cache_map.find(pos);
+    if (it != cache_map.end()) {
+        // 如果缓存中已存在该节点，更新节点并将其移动到链表头部
+        it->second->node = x;
+        it->second->dirty = true;  // 标记为脏数据
+
+        // 手动将该节点移到链表头部
+        Node* targetNode = it->second;  // 获取缓存节点
+        // 先断开 targetNode 的原有链表连接
+        if (targetNode->pre_ != nullptr) {
+            targetNode->pre_->nxt_ = targetNode->nxt_;
         }
+        if (targetNode->nxt_ != nullptr) {
+            targetNode->nxt_->pre_ = targetNode->pre_;
+        }
+        // 将 targetNode 插入到链表头部
+        targetNode->nxt_ = head_->nxt_;
+        targetNode->pre_ = head_;
+        if (head_->nxt_ != nullptr) {
+            head_->nxt_->pre_ = targetNode;
+        }
+        head_->nxt_ = targetNode;
+    } else {
+        // 如果缓存中没有该节点，将其添加到缓存
+        add_to_cache(x, pos);
+
+        // 将新加入的节点标记为脏数据
+        head_->nxt_->dirty = true;  // 新加入的节点标记为脏数据
     }
+}
 
     // 将节点添加到缓存中，如果缓存已满则驱逐最久未使用的节点
     Node add_to_cache(const Node& x, int pos) {

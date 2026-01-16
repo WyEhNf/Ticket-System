@@ -1,9 +1,9 @@
 #ifndef SJTU_LIST_HPP
 #define SJTU_LIST_HPP
-#include <cstddef>
-#include <exception>
 #include <iostream>
 
+#include <cstddef>
+#include <exception>
 
 namespace sjtu {
 
@@ -12,419 +12,397 @@ namespace sjtu {
  * allocate random memory addresses for data and they are doubly-linked in a
  * list.
  */
-template <typename T>
+template<typename T>
 class list {
-   protected:
-    class node {
-       public:
-        /**
-         * add data members and constructors & destructor
-         */
-        T val_;
-        node *nxt_, *pre_;
-        node() = delete;
-        node(const T& val, node* nxt, node* pre)
-            : val_(val), nxt_(nxt), pre_(pre) {
-        }
-        node(T&& val, node* nxt, node* pre)
-            : val_(std::move(val)), nxt_(nxt), pre_(pre) {
-        }
-    };
+protected:
+  class node {
+  public:
+    /**
+     * add data members and constructors & destructor
+     */
+    T val_;
+    node *nxt_, *pre_;
+    node() = delete;
+    node(const T &val, node *nxt, node *pre) : val_(val), nxt_(nxt), pre_(pre) {}
+    node(T &&val, node *nxt, node *pre) : val_(std::move(val)), nxt_(nxt), pre_(pre) {}
+  };
 
-   protected:
+protected:
+  /**
+   * add data members for linked list as protected members
+   */
+  size_t size_;
+  node *head_, *tail_;
+  /**
+   * insert node cur before node pos
+   * return the inserted node cur
+   */
+  node *insert(node *pos, node *cur) {
+    pos->pre_->nxt_ = cur;
+    cur->pre_ = pos->pre_;
+    pos->pre_ = cur;
+    cur->nxt_ = pos;
+   return cur;
+  }
+
+  /**
+   * remove node pos from list (no need to delete the node)
+   * return the removed node pos
+   */
+  node *erase(node *pos) {
+    pos->pre_->nxt_ = pos->nxt_;
+    pos->nxt_->pre_ = pos->pre_;
+    return pos;
+  }
+
+public:
+  class const_iterator;
+
+  class iterator {
+    friend class list;
+    friend class const_iterator;
+  private:
     /**
-     * add data members for linked list as protected members
+     * TODO add data members
+     *   just add whatever you want.
      */
-    size_t size_;
-    node *head_, *tail_;
-    /**
-     * insert node cur before node pos
-     * return the inserted node cur
-     */
-    node* insert(node* pos, node* cur) {
-        pos->pre_->nxt_ = cur;
-        cur->pre_ = pos->pre_;
-        pos->pre_ = cur;
-        cur->nxt_ = pos;
-        return cur;
+    node *ptr_;
+
+  public:
+    explicit iterator(node *ptr = nullptr) : ptr_(ptr) {}
+    iterator operator++(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->nxt_;
+      return tmp;
     }
 
-    /**
-     * remove node pos from list (no need to delete the node)
-     * return the removed node pos
-     */
-    node* erase(node* pos) {
-        pos->pre_->nxt_ = pos->nxt_;
-        pos->nxt_->pre_ = pos->pre_;
-        return pos;
+    iterator &operator++() {
+      ptr_ = ptr_->nxt_;
+      return *this;
     }
 
-   public:
-    class const_iterator;
-
-    class iterator {
-        friend class list;
-        friend class const_iterator;
-
-       private:
-        /**
-         * TODO add data members
-         *   just add whatever you want.
-         */
-        node* ptr_;
-
-       public:
-        explicit iterator(node* ptr = nullptr) : ptr_(ptr) {
-        }
-        iterator operator++(int) {
-            auto tmp = *this;
-            ptr_ = ptr_->nxt_;
-            return tmp;
-        }
-
-        iterator& operator++() {
-            ptr_ = ptr_->nxt_;
-            return *this;
-        }
-
-        iterator operator--(int) {
-            auto tmp = *this;
-            ptr_ = ptr_->pre_;
-            return tmp;
-        }
-
-        iterator& operator--() {
-            ptr_ = ptr_->pre_;
-            return *this;
-        }
-
-        /**
-         * TODO *it
-         * throw std::exception if iterator is invalid
-         */
-        T& operator*() const {
-            if (ptr_ == nullptr || ptr_->nxt_ == nullptr ||
-                ptr_->pre_ == nullptr) {
-                throw std::exception();
-            }
-            return ptr_->val_;
-        }
-
-        /**
-         * TODO it->field
-         * throw std::exception if iterator is invalid
-         */
-        T* operator->() const noexcept {
-            if (ptr_ == nullptr || ptr_->nxt_ == nullptr ||
-                ptr_->pre_ == nullptr) {
-                throw std::exception();
-            }
-            return &ptr_->val_;
-        }
-
-        /**
-         * a operator to check whether two iterators are same (pointing to the
-         * same memory).
-         */
-        bool operator==(const iterator& rhs) const {
-            return ptr_ == rhs.ptr_;
-        }
-
-        bool operator==(const const_iterator& rhs) const {
-            return ptr_ == rhs.ptr_;
-        }
-
-        /**
-         * some other operator for iterator.
-         */
-        bool operator!=(const iterator& rhs) const {
-            return !operator==(rhs);
-        }
-
-        bool operator!=(const const_iterator& rhs) const {
-            return !operator==(rhs);
-        }
-    };
-
-    /**
-     * TODO
-     * has same function as iterator, just for a const object.
-     * should be able to construct from an iterator.
-     */
-    class const_iterator {
-        friend class iterator;
-
-       private:
-        const node* ptr_;
-
-       public:
-        explicit const_iterator(node* ptr = nullptr) : ptr_(ptr) {
-        }
-
-        const_iterator operator++(int) {
-            auto tmp = *this;
-            ptr_ = ptr_->nxt_;
-            return tmp;
-        }
-
-        const_iterator& operator++() {
-            ptr_ = ptr_->nxt_;
-            return *this;
-        }
-
-        const_iterator operator--(int) {
-            auto tmp = *this;
-            ptr_ = ptr_->pre_;
-            return tmp;
-        }
-
-        const_iterator& operator--() {
-            ptr_ = ptr_->pre_;
-            return *this;
-        }
-
-        const T& operator*() const {
-            if (ptr_ == nullptr || ptr_->nxt_ == nullptr ||
-                ptr_->pre_ == nullptr) {
-                throw std::exception();
-            }
-            return ptr_->val_;
-        }
-
-        T* operator->() const noexcept {
-            if (ptr_ == nullptr || ptr_->nxt_ == nullptr ||
-                ptr_->pre_ == nullptr) {
-                throw std::exception();
-            }
-            return &ptr_->val_;
-        }
-
-        bool operator==(const iterator& rhs) const {
-            return ptr_ == rhs.ptr_;
-        }
-
-        bool operator==(const const_iterator& rhs) const {
-            return ptr_ == rhs.ptr_;
-        }
-
-        bool operator!=(const iterator& rhs) const {
-            return !operator==(rhs);
-        }
-
-        bool operator!=(const const_iterator& rhs) const {
-            return !operator==(rhs);
-        }
-    };
-
-    /**
-     * TODO Constructs
-     * Atleast two: default constructor, copy constructor
-     */
-    list() {
-        size_ = 0;
-        head_ = static_cast<node*>(operator new(sizeof(node)));
-        tail_ = static_cast<node*>(operator new(sizeof(node)));
-        head_->nxt_ = tail_;
-        head_->pre_ = nullptr;
-        tail_->pre_ = head_;
-        tail_->nxt_ = nullptr;
+    iterator operator--(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->pre_;
+      return tmp;
     }
 
-    list(const list& other) {
-        size_ = other.size_;
-        head_ = static_cast<node*>(operator new(sizeof(node)));
-        tail_ = static_cast<node*>(operator new(sizeof(node)));
-        head_->nxt_ = tail_;
-        head_->pre_ = nullptr;
-        tail_->pre_ = head_;
-        tail_->nxt_ = nullptr;
-
-        node* cur = other.head_->nxt_;
-        while (cur != other.tail_) {
-            insert(tail_, new node(*cur));
-            cur = cur->nxt_;
-        }
+    iterator &operator--() {
+      ptr_ = ptr_->pre_;
+      return *this;
     }
 
     /**
-     * TODO Destructor
+     * TODO *it
+     * throw std::exception if iterator is invalid
      */
-    virtual ~list() {
-        while (head_->nxt_ != tail_) {
-            delete erase(head_->nxt_);
-        }
-        operator delete(head_);
-        operator delete(tail_);
+    T &operator*() const {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return ptr_->val_;
     }
 
     /**
-     * TODO Assignment operator
+     * TODO it->field
+     * throw std::exception if iterator is invalid
      */
-    list& operator=(const list& other) {
-        if (&other == this) {
-            return *this;
-        }
-        size_ = other.size_;
-        while (head_->nxt_ != tail_) {
-            delete erase(head_->nxt_);
-        }
-        node* cur = other.head_->nxt_;
-        while (cur != other.tail_) {
-            insert(tail_, new node(*cur));
-            cur = cur->nxt_;
-        }
-        return *this;
+    T *operator->() const noexcept {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return &ptr_->val_;
     }
 
     /**
-     * access the first / last element
-     * throw container_is_empty when the container is empty.
+     * a operator to check whether two iterators are same (pointing to the same
+     * memory).
      */
-    const T& front() const {
-        if (head_->nxt_ == tail_) {
-            throw std::exception();
-        }
-        return head_->nxt_->val_;
+    bool operator==(const iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
     }
 
-    const T& back() const {
-        if (head_->nxt_ == tail_) {
-            throw std::exception();
-        }
-        return tail_->pre_->val_;
+    bool operator==(const const_iterator &rhs) const {
+     return ptr_ == rhs.ptr_;
     }
 
     /**
-     * returns an iterator to the beginning.
+     * some other operator for iterator.
      */
-    iterator begin() {
-        return iterator(head_->nxt_);
+    bool operator!=(const iterator &rhs) const {
+      return !operator==(rhs);
     }
 
-    const_iterator cbegin() const {
-        return const_iterator(head_->nxt_);
+    bool operator!=(const const_iterator &rhs) const {
+      return !operator==(rhs);
+    }
+  };
+
+  /**
+   * TODO
+   * has same function as iterator, just for a const object.
+   * should be able to construct from an iterator.
+   */
+  class const_iterator {
+    friend class iterator;
+  private:
+    const node *ptr_;
+
+  public:
+    explicit const_iterator(node *ptr = nullptr) : ptr_(ptr) {}
+
+    const_iterator operator++(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->nxt_;
+      return tmp;
     }
 
-    /**
-     * returns an iterator to the end.
-     */
-    iterator end() {
-        return iterator(tail_);
+    const_iterator &operator++() {
+      ptr_ = ptr_->nxt_;
+      return *this;
     }
 
-    const_iterator cend() const {
-        return const_iterator(tail_);
+    const_iterator operator--(int) {
+      auto tmp = *this;
+      ptr_ = ptr_->pre_;
+      return tmp;
     }
 
-    /**
-     * checks whether the container is empty.
-     */
-    virtual bool empty() const {
-        return head_->nxt_ == tail_;
+    const_iterator &operator--() {
+      ptr_ = ptr_->pre_;
+      return *this;
     }
 
-    /**
-     * returns the number of elements
-     */
-    virtual size_t size() const {
-        return size_;
+    const T &operator*() const {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return ptr_->val_;
     }
 
-    /**
-     * clears the contents
-     */
-    virtual void clear() {
-        while (head_->nxt_ != tail_) {
-            delete erase(head_->nxt_);
-        }
-        size_ = 0;
+    T *operator->() const noexcept {
+      if (ptr_ == nullptr || ptr_->nxt_ == nullptr || ptr_->pre_ == nullptr) {
+        throw std::exception();
+      }
+      return &ptr_->val_;
     }
 
-    /**
-     * insert value before pos (pos may be the end() iterator)
-     * return an iterator pointing to the inserted value
-     * throw if the iterator is invalid
-     */
-    // virtual iterator insert(iterator pos, const T &value) {
-    //   if (pos.ptr_ == head_ || pos.ptr_ == nullptr) {
-    //     throw std::exception();
-    //   }
-    //   ++size_;
-    //   return iterator(insert(pos.ptr_, new node(value, nullptr, nullptr)));
-    // }
-
-    /**
-     * remove the element at pos (the end() iterator is invalid)
-     * returns an iterator pointing to the following element, if pos pointing to
-     * the last element, end() will be returned. throw if the container is
-     * empty, the iterator is invalid
-     */
-    virtual iterator erase(iterator first, iterator last) {
-        while (first != last) {
-            first = erase(first);  // 删除当前节点，并返回下一个节点的迭代器
-        }
-        return last;  // 返回删除区间之后的迭代器
+    bool operator==(const iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
     }
 
-    /**
-     * adds an element to the end
-     */
-    void push_back(const T& value) {
-        ++size_;
-        insert(tail_, new node(value, nullptr, nullptr));
+    bool operator==(const const_iterator &rhs) const {
+      return ptr_ == rhs.ptr_;
     }
 
-    void emplace_back(T&& value) {
-        ++size_;
-        insert(tail_, new node(std::move(value), nullptr, nullptr));
+    bool operator!=(const iterator &rhs) const {
+      return !operator==(rhs);
     }
 
-    /**
-     * removes the last element
-     * throw when the container is empty.
-     */
-    void pop_back() {
-        if (size_ == 0) {
-            throw std::exception();
-        }
-        --size_;
-        delete erase(tail_->pre_);
+    bool operator!=(const const_iterator &rhs) const {
+      return !operator==(rhs);
     }
+  };
 
-    /**
-     * inserts an element to the beginning.
-     */
-    void push_front(const T& value) {
-        ++size_;
-        insert(head_->nxt_, new node(value, nullptr, nullptr));
+  /**
+   * TODO Constructs
+   * Atleast two: default constructor, copy constructor
+   */
+  list() {
+    size_ = 0;
+    head_ = static_cast<node *>(operator new(sizeof(node)));
+    tail_ = static_cast<node *>(operator new(sizeof(node)));
+    head_->nxt_ = tail_;
+    head_->pre_ = nullptr;
+    tail_->pre_ = head_;
+    tail_->nxt_ = nullptr;
+  }
+
+  list(const list &other) {
+    size_ = other.size_;
+    head_ = static_cast<node *>(operator new(sizeof(node)));
+    tail_ = static_cast<node *>(operator new(sizeof(node)));
+    head_->nxt_ = tail_;
+    head_->pre_ = nullptr;
+    tail_->pre_ = head_;
+    tail_->nxt_ = nullptr;
+
+    node *cur = other.head_->nxt_;
+    while (cur != other.tail_) {
+      insert(tail_, new node(*cur));
+      cur = cur->nxt_;
     }
+  }
 
-    /**
-     * removes the first element.
-     * throw when the container is empty.
-     */
-    void pop_front() {
-        if (size_ == 0) {
-            throw std::exception();
-        }
-        --size_;
-        delete erase(head_->nxt_);
+  /**
+   * TODO Destructor
+   */
+  virtual ~list() {
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
     }
-    void splice(iterator pos, list<T>& other, iterator first, iterator last) {
-        if (first == last) return;  // 空区间，不做任何操作
+    operator delete(head_);
+    operator delete(tail_);
+  }
 
-        // 更新源链表的连接
-        other.erase(first, last);  // 先从源链表中删除这些元素
-
-        // 在目标链表中插入这些元素
-        while (first != last) {
-            insert(pos.ptr_,
-                   new node(std::move(*first)));  // 将节点插入到目标位置
-            ++first;                              // 移动到下一个节点
-        }
+  /**
+   * TODO Assignment operator
+   */
+  list &operator=(const list &other) {
+    if (&other == this) {
+      return *this;
     }
+    size_ = other.size_;
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
+    }
+    node *cur = other.head_->nxt_;
+    while (cur != other.tail_) {
+      insert(tail_, new node(*cur));
+      cur = cur->nxt_;
+    }
+    return *this;
+  }
+
+  /**
+   * access the first / last element
+   * throw container_is_empty when the container is empty.
+   */
+  const T &front() const {
+    if (head_->nxt_ == tail_) {
+      throw std::exception();
+    }
+    return head_->nxt_->val_;
+  }
+
+  const T &back() const {
+    if (head_->nxt_ == tail_) {
+      throw std::exception();
+    }
+    return tail_->pre_->val_;
+  }
+
+  /**
+   * returns an iterator to the beginning.
+   */
+  iterator begin() {
+    return iterator(head_->nxt_);
+  }
+
+  const_iterator cbegin() const {
+    return const_iterator(head_->nxt_);
+  }
+
+  /**
+   * returns an iterator to the end.
+   */
+  iterator end() {
+    return iterator(tail_);
+  }
+
+  const_iterator cend() const {
+    return const_iterator(tail_);
+  }
+
+  /**
+   * checks whether the container is empty.
+   */
+  virtual bool empty() const {
+    return head_->nxt_ == tail_;
+  }
+
+  /**
+   * returns the number of elements
+   */
+  virtual size_t size() const {
+    return size_;
+  }
+
+  /**
+   * clears the contents
+   */
+  virtual void clear() {
+    while (head_->nxt_ != tail_) {
+      delete erase(head_->nxt_);
+    }
+    size_ = 0;
+  }
+
+  /**
+   * insert value before pos (pos may be the end() iterator)
+   * return an iterator pointing to the inserted value
+   * throw if the iterator is invalid
+   */
+  // virtual iterator insert(iterator pos, const T &value) {
+  //   if (pos.ptr_ == head_ || pos.ptr_ == nullptr) {
+  //     throw std::exception();
+  //   }
+  //   ++size_;
+  //   return iterator(insert(pos.ptr_, new node(value, nullptr, nullptr)));
+  // }
+
+  /**
+   * remove the element at pos (the end() iterator is invalid)
+   * returns an iterator pointing to the following element, if pos pointing to
+   * the last element, end() will be returned. throw if the container is empty,
+   * the iterator is invalid
+   */
+  virtual iterator erase(iterator pos) {
+    if (pos.ptr_ == head_ || pos.ptr_ == tail_ || pos.ptr_ == nullptr) {
+      throw std::exception();
+    }
+    --size_;
+    node *tmp = pos.ptr_->nxt_;
+    delete erase(pos.ptr_);
+    return iterator(tmp);
+  }
+
+  /**
+   * adds an element to the end
+   */
+  void push_back(const T &value) {
+    ++size_;
+    insert(tail_, new node(value, nullptr, nullptr));
+  }
+
+  void emplace_back(T &&value) {
+    ++size_;
+    insert(tail_, new node(std::move(value), nullptr, nullptr));
+  }
+
+  /**
+   * removes the last element
+   * throw when the container is empty.
+   */
+  void pop_back() {
+    if (size_ == 0) {
+      throw std::exception();
+    }
+    --size_;
+    delete erase(tail_->pre_);
+  }
+
+  /**
+   * inserts an element to the beginning.
+   */
+  void push_front(const T &value) {
+    ++size_;
+    insert(head_->nxt_, new node(value, nullptr, nullptr));
+  }
+
+  /**
+   * removes the first element.
+   * throw when the container is empty.
+   */
+  void pop_front() {
+    if (size_ == 0) {
+      throw std::exception();
+    }
+    --size_;
+    delete erase(head_->nxt_);
+  }
 };
 
-}  // namespace sjtu
+} // namespace sjtu
 
-#endif  // SJTU_LIST_HPP
+#endif // SJTU_LIST_HPP
