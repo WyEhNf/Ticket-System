@@ -1,18 +1,19 @@
-#include <cstring>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <list>
-#include <map>
-#include <string>
-
-#include "list.hpp"
+#include <fstream> 
 #include "map.hpp"
+#include "list.hpp"
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <map>
+#include <list>
 
 using namespace std;
 using namespace sjtu;
 
 /* ================= MemoryRiver ================= */
+
+
 
 struct MyString {
     static constexpr size_t MAX_LEN = 64;  // 最大字符长度
@@ -188,25 +189,8 @@ class BPlusTree {
         auto it = cache_map.find(pos);
         if (it != cache_map.end()) {
             // 命中：将缓存块移动到链表头部（LRU）
-            Node* targetNode = it->second;  // 获取缓存节点
-
-            // 先断开 targetNode 的原有链表连接
-            if (targetNode->pre_ != nullptr) {
-                targetNode->pre_->nxt_ = targetNode->nxt_;
-            }
-            if (targetNode->nxt_ != nullptr) {
-                targetNode->nxt_->pre_ = targetNode->pre_;
-            }
-
-            // 将 targetNode 插入到链表头部
-            targetNode->nxt_ =
-                cache_list.begin().ptr_;  // 使用 begin() 获取链表头部
-            if (cache_list.begin().ptr_ != nullptr) {
-                cache_list.begin().ptr_->pre_ = targetNode;
-            }
-            cache_list.begin().ptr_ = targetNode;  // 更新链表头部为 targetNode
-
-            return targetNode->node;  // 返回缓存中的节点
+            cache_list.splice(cache_list.begin(), cache_list, it->second);
+            return it->second->node;  // 返回缓存中的节点
         }
 
         // 2. 未命中：从磁盘读取
@@ -217,37 +201,19 @@ class BPlusTree {
         return add_to_cache(x, pos);  // 添加到缓存并返回
     }
 
-    // 将节点写入缓存（并标记为脏），如果缓存已满则驱逐最久未使用的节点
+    // 将节点写入缓存（并标记为 dirty），如果缓存已满则驱逐最久未使用的节点
     void write_node(const Node& x, int pos) {
         auto it = cache_map.find(pos);
         if (it != cache_map.end()) {
             // 如果缓存中已存在该节点，更新节点并将其移动到链表头部
             it->second->node = x;
             it->second->dirty = true;  // 标记为脏数据
-
-            // 手动将该节点移到链表头部
-            Node* targetNode = it->second;  // 获取缓存节点
-            // 先断开 targetNode 的原有链表连接
-            if (targetNode->pre_ != nullptr) {
-                targetNode->pre_->nxt_ = targetNode->nxt_;
-            }
-            if (targetNode->nxt_ != nullptr) {
-                targetNode->nxt_->pre_ = targetNode->pre_;
-            }
-
-            // 将 targetNode 插入到链表头部
-            targetNode->nxt_ =
-                cache_list.begin().ptr_;  // 使用 begin() 获取链表头部
-            if (cache_list.begin().ptr_ != nullptr) {
-                cache_list.begin().ptr_->pre_ = targetNode;
-            }
-            cache_list.begin().ptr_ = targetNode;  // 更新链表头部为 targetNode
+            cache_list.splice(cache_list.begin(), cache_list,
+                              it->second);  // 移动到头部
         } else {
             // 如果缓存中没有该节点，将其添加到缓存
             add_to_cache(x, pos);
-
-            // 将新加入的节点标记为脏数据
-            cache_list.begin().ptr_->dirty = true;  // 新加入的节点标记为脏数据
+            cache_list.begin()->dirty = true;  // 新加入的节点标记为脏数据
         }
     }
 
@@ -260,9 +226,9 @@ class BPlusTree {
             if (last.dirty) {
                 river.update(last.node, last.pos);
             }
-            auto res = cache_map.find(last.pos);
-            cache_map.erase(res);   // 从哈希表中移除
-            cache_list.pop_back();  // 从链表中移除
+            auto res=cache_map.find(last.pos);
+            cache_map.erase(res);  // 从哈希表中移除
+            cache_list.pop_back();      // 从链表中移除
         }
 
         // 将新的节点插入到缓存的链表头部
