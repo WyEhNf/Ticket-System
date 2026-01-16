@@ -9,7 +9,6 @@
 #include "list.hpp"
 #include "map.hpp"
 
-
 using namespace std;
 using namespace sjtu;
 
@@ -184,38 +183,82 @@ class BPlusTree {
 
     // 通过磁盘位置获取节点，首先检查缓存，如果缓存中存在该节点则返回缓存中的节点
     // 否则从磁盘读取节点，并将该节点添加到缓存中
+    // 读取节点：优先从缓存取，命中则移动到 LRU 头部，未命中则从磁盘读并加入缓存
     Node node(int pos) {
-        // 1. 检查缓存
-        auto it = cache_map.find(pos);
-        if (it != cache_map.end()) {
-            // 命中：将缓存块移动到链表头部（LRU）
-            cache_list.insert(cache_list.begin(),
-                              *it->second);  // 将当前元素插入到头部
-            cache_list.erase(it->second);    // 从原位置删除
-            return it->second->node;         // 返回缓存中的节点
+        auto map_it = cache_map.find(pos);
+        if (map_it != cache_map.end()) {
+            // 缓存命中
+            auto old_list_it = map_it->second;
+
+            // 保存当前节点内容（因为后面 erase 会让 old_list_it 失效）
+            Node current_node = old_list_it->node;
+            bool current_dirty = old_list_it->dirty;
+
+            // 删除旧位置（让它从原位置移除）
+            cache_list.erase(old_list_it);
+
+            // 插入到链表头部（最近使用）
+            cache_list.push_front({current_node, current_dirty, pos});
+
+            // 更新 map 中的迭代器（指向新的头部位置）
+            cache_map[pos] = cache_list.begin();
+
+            return current_node;
         }
 
-        // 2. 未命中：从磁盘读取
+        // 缓存未命中：从磁盘读取
         Node x;
-        river.read(x, pos);  // 通过 river 从磁盘读取节点
+        river.read(x, pos);
 
-        // 3. 将新读取的节点添加到缓存
-        return add_to_cache(x, pos);  // 添加到缓存并返回
+        // 如果缓存满了，驱逐最久未使用的块
+        if (cache_list.size() >= CACHE_CAPACITY) {
+            CacheBlock& victim = cache_list.back();
+            if (victim.dirty) {
+                river.update(victim.node, victim.pos);
+            }
+            cache_map.erase(cache_map.find(victim.pos));
+            cache_list.pop_back();
+        }
+
+        // 加入缓存（新读出的节点 dirty = false）
+        cache_list.push_front({x, false, pos});
+        cache_map[pos] = cache_list.begin();
+
+        return x;
     }
 
-    // 将节点写入缓存（并标记为 dirty），如果缓存已满则驱逐最久未使用的节点
+    // 写入节点：更新缓存中的节点（或加入新节点），并标记 dirty
     void write_node(const Node& x, int pos) {
-        auto it = cache_map.find(pos);
-        if (it != cache_map.end()) {
-            // 如果缓存中已存在该节点，更新节点并将其移动到链表头部
-            it->second->node = x;
-            it->second->dirty = true;                            // 标记为脏数据
-            cache_list.insert(cache_list.begin(), *it->second);  // 插入到头部
-            cache_list.erase(it->second);  // 删除原位置的节点
+        auto map_it = cache_map.find(pos);
+        if (map_it != cache_map.end()) {
+            // 缓存命中
+            auto old_list_it = map_it->second;
+
+            // 保存 dirty 状态（一般保持不变，但这里强制标记为 true）
+            bool current_dirty = old_list_it->dirty;
+
+            // 删除旧位置
+            cache_list.erase(old_list_it);
+
+            // 更新内容后插入到头部，并强制标记 dirty = true
+            cache_list.push_front({x, true, pos});
+
+            // 更新 map
+            cache_map[pos] = cache_list.begin();
         } else {
-            // 如果缓存中没有该节点，将其添加到缓存
-            add_to_cache(x, pos);
-            cache_list.begin()->dirty = true;  // 新加入的节点标记为脏数据
+            // 缓存未命中：当作新写入处理
+            if (cache_list.size() >= CACHE_CAPACITY) {
+                CacheBlock& victim = cache_list.back();
+                if (victim.dirty) {
+                    river.update(victim.node, victim.pos);
+                }
+                cache_map.erase(cache_map.find(victim.pos));
+                cache_list.pop_back();
+            }
+
+            // 加入缓存，标记 dirty = true
+            cache_list.push_front({x, true, pos});
+            cache_map[pos] = cache_list.begin();
         }
     }
 
