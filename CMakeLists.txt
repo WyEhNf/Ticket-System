@@ -11,4 +11,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_executable(code src/bpt/BPT.cpp)
 
 # 指定 STL 头文件所在的目录
-target_include_directories(TicketSystem PRIVATE ${PROJECT_SOURCE_DIR}/src/stl)
+target_include_directories(code PRIVATE ${PROJECT_SOURCE_DIR}/src/stl)
