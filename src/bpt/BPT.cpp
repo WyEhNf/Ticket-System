@@ -5,6 +5,8 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <map>
+#include <list>
 
 using namespace std;
 using namespace sjtu;
@@ -177,8 +179,8 @@ class BPlusTree {
     // 缓存使用 LRU（Least Recently Used）策略：
     // cache_list 保存缓存块，最近使用的块位于头部，最久未使用的块位于尾部。
     // cache_map 用来通过磁盘位置快速查找缓存块
-    sjtu::list<CacheBlock> cache_list;
-    sjtu::map<int, typename sjtu::list<CacheBlock>::iterator> cache_map;
+    std::list<CacheBlock> cache_list;
+    std::map<int, typename std::list<CacheBlock>::iterator> cache_map;
 
     // 通过磁盘位置获取节点，首先检查缓存，如果缓存中存在该节点则返回缓存中的节点
     // 否则从磁盘读取节点，并将该节点添加到缓存中
