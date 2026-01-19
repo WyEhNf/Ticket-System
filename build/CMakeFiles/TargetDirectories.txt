@@ -1,3 +1,0 @@
-E:/Code/Ticket-System-2025-master/build/CMakeFiles/code.dir
-E:/Code/Ticket-System-2025-master/build/CMakeFiles/edit_cache.dir
-E:/Code/Ticket-System-2025-master/build/CMakeFiles/rebuild_cache.dir
