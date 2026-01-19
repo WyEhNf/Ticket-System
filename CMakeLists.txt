@@ -15,7 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/System)
 include_directories(${PROJECT_SOURCE_DIR}/include/memoryriver)
 
 # 为 MyProject 目标添加包含目录
-add_executable(code src/bpt/bpt.cpp
+add_executable(code
  src/system/System.cpp
  src/system/TrainSystem.cpp
 src/system/TicketSystem.cpp
