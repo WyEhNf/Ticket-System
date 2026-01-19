@@ -128,29 +128,149 @@ code/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/build
 .PHONY : code/fast
 
-src/bpt/BPT.obj: src/bpt/BPT.cpp.obj
-.PHONY : src/bpt/BPT.obj
+src/main.obj: src/main.cpp.obj
+.PHONY : src/main.obj
 
 # target to build an object file
-src/bpt/BPT.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/bpt/BPT.cpp.obj
-.PHONY : src/bpt/BPT.cpp.obj
+src/main.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/main.cpp.obj
+.PHONY : src/main.cpp.obj
 
-src/bpt/BPT.i: src/bpt/BPT.cpp.i
-.PHONY : src/bpt/BPT.i
+src/main.i: src/main.cpp.i
+.PHONY : src/main.i
 
 # target to preprocess a source file
-src/bpt/BPT.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/bpt/BPT.cpp.i
-.PHONY : src/bpt/BPT.cpp.i
+src/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/main.cpp.i
+.PHONY : src/main.cpp.i
 
-src/bpt/BPT.s: src/bpt/BPT.cpp.s
-.PHONY : src/bpt/BPT.s
+src/main.s: src/main.cpp.s
+.PHONY : src/main.s
 
 # target to generate assembly for a file
-src/bpt/BPT.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/bpt/BPT.cpp.s
-.PHONY : src/bpt/BPT.cpp.s
+src/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/main.cpp.s
+.PHONY : src/main.cpp.s
+
+src/parser.obj: src/parser.cpp.obj
+.PHONY : src/parser.obj
+
+# target to build an object file
+src/parser.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/parser.cpp.obj
+.PHONY : src/parser.cpp.obj
+
+src/parser.i: src/parser.cpp.i
+.PHONY : src/parser.i
+
+# target to preprocess a source file
+src/parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/parser.cpp.i
+.PHONY : src/parser.cpp.i
+
+src/parser.s: src/parser.cpp.s
+.PHONY : src/parser.s
+
+# target to generate assembly for a file
+src/parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/parser.cpp.s
+.PHONY : src/parser.cpp.s
+
+src/system/System.obj: src/system/System.cpp.obj
+.PHONY : src/system/System.obj
+
+# target to build an object file
+src/system/System.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/System.cpp.obj
+.PHONY : src/system/System.cpp.obj
+
+src/system/System.i: src/system/System.cpp.i
+.PHONY : src/system/System.i
+
+# target to preprocess a source file
+src/system/System.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/System.cpp.i
+.PHONY : src/system/System.cpp.i
+
+src/system/System.s: src/system/System.cpp.s
+.PHONY : src/system/System.s
+
+# target to generate assembly for a file
+src/system/System.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/System.cpp.s
+.PHONY : src/system/System.cpp.s
+
+src/system/TicketSystem.obj: src/system/TicketSystem.cpp.obj
+.PHONY : src/system/TicketSystem.obj
+
+# target to build an object file
+src/system/TicketSystem.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TicketSystem.cpp.obj
+.PHONY : src/system/TicketSystem.cpp.obj
+
+src/system/TicketSystem.i: src/system/TicketSystem.cpp.i
+.PHONY : src/system/TicketSystem.i
+
+# target to preprocess a source file
+src/system/TicketSystem.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TicketSystem.cpp.i
+.PHONY : src/system/TicketSystem.cpp.i
+
+src/system/TicketSystem.s: src/system/TicketSystem.cpp.s
+.PHONY : src/system/TicketSystem.s
+
+# target to generate assembly for a file
+src/system/TicketSystem.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TicketSystem.cpp.s
+.PHONY : src/system/TicketSystem.cpp.s
+
+src/system/TrainSystem.obj: src/system/TrainSystem.cpp.obj
+.PHONY : src/system/TrainSystem.obj
+
+# target to build an object file
+src/system/TrainSystem.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TrainSystem.cpp.obj
+.PHONY : src/system/TrainSystem.cpp.obj
+
+src/system/TrainSystem.i: src/system/TrainSystem.cpp.i
+.PHONY : src/system/TrainSystem.i
+
+# target to preprocess a source file
+src/system/TrainSystem.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TrainSystem.cpp.i
+.PHONY : src/system/TrainSystem.cpp.i
+
+src/system/TrainSystem.s: src/system/TrainSystem.cpp.s
+.PHONY : src/system/TrainSystem.s
+
+# target to generate assembly for a file
+src/system/TrainSystem.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/TrainSystem.cpp.s
+.PHONY : src/system/TrainSystem.cpp.s
+
+src/system/UserSystem.obj: src/system/UserSystem.cpp.obj
+.PHONY : src/system/UserSystem.obj
+
+# target to build an object file
+src/system/UserSystem.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/UserSystem.cpp.obj
+.PHONY : src/system/UserSystem.cpp.obj
+
+src/system/UserSystem.i: src/system/UserSystem.cpp.i
+.PHONY : src/system/UserSystem.i
+
+# target to preprocess a source file
+src/system/UserSystem.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/UserSystem.cpp.i
+.PHONY : src/system/UserSystem.cpp.i
+
+src/system/UserSystem.s: src/system/UserSystem.cpp.s
+.PHONY : src/system/UserSystem.s
+
+# target to generate assembly for a file
+src/system/UserSystem.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\code.dir\build.make CMakeFiles/code.dir/src/system/UserSystem.cpp.s
+.PHONY : src/system/UserSystem.cpp.s
 
 # Help Target
 help:
@@ -161,9 +281,24 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... code
-	@echo ... src/bpt/BPT.obj
-	@echo ... src/bpt/BPT.i
-	@echo ... src/bpt/BPT.s
+	@echo ... src/main.obj
+	@echo ... src/main.i
+	@echo ... src/main.s
+	@echo ... src/parser.obj
+	@echo ... src/parser.i
+	@echo ... src/parser.s
+	@echo ... src/system/System.obj
+	@echo ... src/system/System.i
+	@echo ... src/system/System.s
+	@echo ... src/system/TicketSystem.obj
+	@echo ... src/system/TicketSystem.i
+	@echo ... src/system/TicketSystem.s
+	@echo ... src/system/TrainSystem.obj
+	@echo ... src/system/TrainSystem.i
+	@echo ... src/system/TrainSystem.s
+	@echo ... src/system/UserSystem.obj
+	@echo ... src/system/UserSystem.i
+	@echo ... src/system/UserSystem.s
 .PHONY : help
 
 

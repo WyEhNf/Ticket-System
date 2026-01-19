@@ -1,0 +1,49 @@
+#include "Ticket.hpp"
+#include "bpt.hpp"
+using namespace std;
+namespace sjtu {
+    enum CompareType {TIME, PRICE};
+    class TicketSystem {
+    private:
+        struct TicketKey{
+            int date;
+            String from_station;
+            bool operator == (const TicketKey& o) const {
+                return date == o.date && from_station == o.from_station;
+            }
+            bool operator != (const TicketKey& o) const {
+                return !(*this == o);
+            }
+            bool operator < (const TicketKey& o) const {
+                if (date != o.date) return date < o.date;
+                return from_station < o.from_station;
+            }
+            bool operator > (const TicketKey& o) const {
+                return o < *this;
+            }
+            bool operator <= (const TicketKey& o) const {
+                return !(o < *this);
+            }
+            bool operator >= (const TicketKey& o) const {
+                return !(*this < o);
+            }
+        };
+        BPlusTree<TicketKey, Ticket> ticket_tree;
+        vector<order> waiting_list;
+
+    public:
+        TicketSystem(string filename) : ticket_tree(filename) {}
+        ~TicketSystem(){}
+        bool add_ticket(const Train& train);
+        bool query_ticket(const String& from_station,
+                          const String& to_station, int date, CompareType cmp_type);
+        bool query_transfer_ticket(const String& from_station,
+                                   const String& to_station, int date,CompareType cmp_type);
+        bool buy_ticket(const Ticket& ticket, int num,bool if_wait,order &result, const String& UserID);
+         order refund_ticket(const Ticket& ticket, int num);
+
+        static bool Compare_with_cost(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
+        static bool Compare_with_time(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
+        void printTicket(Ticket t, String from_station, String to_station);
+    };
+}
