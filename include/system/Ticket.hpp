@@ -2,7 +2,7 @@
 // #define _TICKET_HPP_
 #pragma once
 #include "Train.hpp"
-#include "vector.hpp"
+#include "../container/vector.hpp"
 
 using namespace std;
 namespace sjtu {

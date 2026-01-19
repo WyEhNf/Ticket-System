@@ -1,5 +1,5 @@
 #include "Train.hpp"
-#include "bpt.hpp"
+#include "../container/bpt.hpp"
 using namespace std;
 namespace sjtu {
 class TrainSystem {

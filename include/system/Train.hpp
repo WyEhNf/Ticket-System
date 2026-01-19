@@ -1,8 +1,8 @@
 // #ifdef _TRAIN_HPP_
 // #define _TRAIN_HPP_
 #pragma once
-#include "String.hpp"
-#include "vector.hpp"
+#include "../container/String.hpp"
+#include "../container/vector.hpp"
 using namespace std;
 namespace sjtu {
 class Train {

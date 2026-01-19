@@ -2,7 +2,7 @@
 #include "TicketSystem.hpp"
 #include "TrainSystem.hpp"  
 #include "UserSystem.hpp"
-#include "parser.hpp"
+#include "../parser.hpp"
 using namespace std;
 namespace sjtu {
     class System {
