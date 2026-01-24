@@ -46,6 +46,7 @@ void System::run() {
             } else if (command == "clean") {
                 clean();
             } else if (command == "exit") {
+                std::cout<<"bye"<<std::endl;
                 break;
             }
         } catch (int) {
@@ -234,7 +235,7 @@ void System::query_train() {
     if (date < train.sale_begin || date > train.sale_end) throw -1;
     int time = train.startTime;
     int price = 0;
-    // std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
+    std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
     for (int i = 0; i < train.stationNum; i++) {
         String arr_time, leave_time;
         if (i == 0)
@@ -250,8 +251,8 @@ void System::query_train() {
             leave_time = train.realTime(time, date);
         else
         {
-            leave_time = train.realTime(time + train.stopoverTimes[i], date);
-            time += train.stopoverTimes[i];
+            leave_time = train.realTime(time + train.stopoverTimes[i-1], date);
+            time += train.stopoverTimes[i-1];
         }
         // std::cerr<<"OK!"<<train.stations[i]<<endl;
         int res_seat = (i == train.stationNum - 1)
@@ -339,8 +340,8 @@ void System::buy_ticket() {
         } else if (key == 'n') {
             num = input.GetInteger();
         } else if (key == 'q') {
-            char c = input.GetChar();
-            if (c == 'y') if_wait = true;
+            String c = input.GetString();
+            if (c == (string)("true")) if_wait = true;
         }
         key=input.GetKey();
     }
