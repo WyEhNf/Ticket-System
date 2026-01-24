@@ -57,5 +57,10 @@ class MemoryRiver {
         file.seekp(pos);
         file.write(reinterpret_cast<const char*>(&t), sizeof(T));
     }
+    void clean_up() {
+        file.close();
+        filesystem::remove(file_name);
+        initialise(file_name);
+    }
 };
 }  // namespace sjtu

@@ -7,6 +7,7 @@ class TrainSystem {
     BPlusTree<String, Train> train_tree;
     friend class Ticket;
     friend class TicketSystem;
+    friend class System;
    public:
     TrainSystem(string filename="train_tree.data"): train_tree(filename) {}
     ~TrainSystem(){}
@@ -14,6 +15,7 @@ class TrainSystem {
     bool delete_train(const String& train_id);
     Train find_train(const String& train_id);
     bool release_train(const String& train_id);
+    void clean_up();
    
 
 };

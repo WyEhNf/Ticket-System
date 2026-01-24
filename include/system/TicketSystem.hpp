@@ -30,6 +30,7 @@ namespace sjtu {
         };
         BPlusTree<TicketKey, Ticket> ticket_tree;
         vector<order> waiting_list;
+        friend class System;
 
     public:
         TicketSystem(string filename) : ticket_tree(filename) {}
@@ -45,5 +46,6 @@ namespace sjtu {
         static bool Compare_with_cost(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
         static bool Compare_with_time(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
         void printTicket(Ticket t, String from_station, String to_station);
+        void clean_up();
     };
 }

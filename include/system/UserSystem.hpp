@@ -7,6 +7,7 @@ namespace sjtu{
     {
         private:
             BPlusTree<String,User> user_tree;
+            friend class System;
         public:
             UserSystem(string filename="user_tree.data"): user_tree(filename) {}
             ~UserSystem(){}
@@ -20,6 +21,7 @@ namespace sjtu{
         bool logout(String user_id);
         User modify_user(String user_id, const User& new_user);
         void modify_oder(order &o,string new_sta);
+        void clean_up();
 
     };
 }

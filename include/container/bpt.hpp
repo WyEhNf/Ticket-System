@@ -61,13 +61,14 @@ class BPlusTree {
     void merge_leaf(int l, int r, int sep);
     void fix_internal(int u);
     void merge_internal(int l, int r, int sep);
-
+    
    public:
     BPlusTree(string fn = "bpt.db");
     ~BPlusTree();
     void insert(const IndexType& idx, const ValueType& val);
     void erase(const IndexType& idx, const ValueType& val);
     vector<Key> find(const IndexType& idx);
+    void clean_up();
 };
 
 
@@ -552,5 +553,20 @@ BPlusTree<IndexType, ValueType, ORDER>::find(const IndexType& idx) {
     }
     return res;
 }
+template <typename IndexType, typename ValueType, int ORDER>
+void BPlusTree<IndexType, ValueType, ORDER>::clean_up() {
+    cache_list.clear();
+    cache_map.clear();
 
-}  // namespace sjtu
+    river.clean_up();
+    Node r;
+    r.is_leaf = true;
+    r.parent = -1;
+    r.key_cnt = 0;
+    
+    int rp = river.write(r);     
+    river.write_info(rp, 1);     
+    river.write_info(1, 2);      
+    add_to_cache(r, rp);
+}// namespace sjtu
+}

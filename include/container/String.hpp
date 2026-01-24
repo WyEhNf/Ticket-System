@@ -52,7 +52,8 @@ struct String {
             st+=char(x%10+'0');
             x/=10;
         }
-        if(st.size()==0) st="0"+st;
+        if(st.size()==0) st="00";
+        else if(st.size()==1) st="0"+st;
         else swap(st[0],st[1]);
         return st;  
     }

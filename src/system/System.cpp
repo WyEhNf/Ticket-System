@@ -14,6 +14,7 @@ void System::run() {
         try {
             timestamp = input.GetTimestamp();
             string command = input.GetCommand();
+            cout<<"["<<timestamp<<"] ";
             if (command == "add_user") {
                 add_user();
             } else if (command == "login") {
@@ -40,14 +41,14 @@ void System::run() {
                 buy_ticket();
             } else if (command == "refund_ticket") {
                 refund_ticket();
-            } else if (command == "query_ordere") {
+            } else if (command == "query_order") {
                 query_order();
             } else if (command == "clean") {
                 clean();
             } else if (command == "exit") {
                 break;
             }
-        } catch (...) {
+        } catch (int) {
             cout << "-1" << endl;
         }
     }
@@ -64,6 +65,7 @@ void System::add_user() {
     while (key != '\n') {
         String str;
         if (key != 'g') str = input.GetString();
+        // std::cerr<<"key: "<<key<<std::endl;
         if (key == 'u') {
             new_user.UserName = str;
         } else if (key == 'i') {
@@ -78,7 +80,9 @@ void System::add_user() {
             int pri = input.GetInteger();
             new_user.privilege = pri;
         }
+        key=input.GetKey();
     }
+    // cout<<new_user.UserName<<' '<<new_user.PassWord<<' '<<new_user.privilege<<endl;
     if (is_first) {
         new_user.privilege = 10;
         user_system.add_user(new_user);
@@ -96,6 +100,7 @@ void System::login() {
     String user_id = input.GetString();
     key = input.GetKey();
     String password = input.GetString();
+    cout<<"login "<<user_id<<' '<<password<<endl;
     if (!user_system.login(user_id, password)) throw -1;
     cout << 0 << endl;
 }
@@ -108,10 +113,17 @@ void System::logout() {
 }
 
 void System::query_profile() {
+
     char key = input.GetKey();
+    String cur_id= input.GetString();
+    User c= user_system.find_user(cur_id);
+    if (c == User()) throw -1;
+    if(!c.logged_in) throw -1;
+    key=input.GetKey();
     String user_id = input.GetString();
     User u = user_system.find_user(user_id);
     if (u == User()) throw -1;
+    if(c.privilege<=u.privilege&&cur_id!=user_id) throw -1; 
     cout << u.UserName << ' ' << u.name << ' ' << u.MailAdr << ' '
          << u.privilege << endl;
 }
@@ -145,6 +157,7 @@ void System::modify_profile() {
             else
                 target_user.privilege = pri;
         }
+        key=input.GetKey();
     }
     if (!qualified) throw -1;
     user_system.modify_user(original_user.UserName, target_user);
@@ -157,6 +170,7 @@ void System::add_train() {
     while (key != '\n') {
         String str;
         int num;
+        // cerr<<"key: "<<key<<std::endl;
         if (key == 'i') {
             new_train.ID = input.GetString();
         } else if (key == 'n') {
@@ -175,12 +189,15 @@ void System::add_train() {
             new_train.stopoverTimes = input.GetIntegerArray();
         } else if (key == 'd') {
             new_train.sale_begin = input.GetDate();
-            input.Skip();
+            // input.Skip();
             new_train.sale_end = input.GetDate();
         } else if (key == 'y') {
             new_train.type = input.GetChar();
         }
+        key=input.GetKey();
     }
+    new_train.initialise();
+    // std::cerr<<"QUES??:"<<new_train.seatNum<<'\n';
     if (!train_system.add_train(new_train)) throw -1;
     cout << 0 << endl;
 }
@@ -197,8 +214,12 @@ void System::release_train() {
     String train_id = input.GetString();
     Train t = train_system.find_train(train_id);
     if (t == Train()) throw -1;
+    // std::cerr<<"releasing train "<<train_id<<endl;
     if (!train_system.release_train(train_id)) throw -1;
-    ticket_system.add_ticket(t);
+    // std::cerr<<"released\n";
+    Train new_t=train_system.find_train(train_id);
+    ticket_system.add_ticket(new_t);
+    // std::cerr<<"wtf\n";
     cout << 0 << endl;
 }
 
@@ -206,26 +227,33 @@ void System::query_train() {
     char key = input.GetKey();
     String train_id = input.GetString();
     Train train = train_system.find_train(train_id);
+    // std::cerr<<"found"<<train.ID<<endl;
     key = input.GetKey();
     int date = input.GetDate();
     if (train == Train()) throw -1;
     if (date < train.sale_begin || date > train.sale_end) throw -1;
     int time = train.startTime;
     int price = 0;
+    // std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
     for (int i = 0; i < train.stationNum; i++) {
         String arr_time, leave_time;
         if (i == 0)
             arr_time = "xx-xx xx:xx";
         else {
             arr_time = train.realTime(time + train.travelTimes[i - 1], date);
+            time += train.travelTimes[i - 1];
         }
-        time += train.travelTimes[i - 1];
+        // std::cerr<<"OK!"<<train.stations[i]<<endl;
         if (i == train.stationNum - 1)
             leave_time = "xx-xx xx:xx";
-        else {
+        else if(i==0)
+            leave_time = train.realTime(time, date);
+        else
+        {
             leave_time = train.realTime(time + train.stopoverTimes[i], date);
+            time += train.stopoverTimes[i];
         }
-        time += train.stopoverTimes[i];
+        // std::cerr<<"OK!"<<train.stations[i]<<endl;
         int res_seat = (i == train.stationNum - 1)
                            ? 0
                            : train.get_seat_res(train.stations[i],
@@ -237,6 +265,7 @@ void System::query_train() {
             cout << res_seat << endl;
         } else
             cout << 'x' << endl;
+        
     }
 }
 void System::query_ticket() {
@@ -258,6 +287,7 @@ void System::query_ticket() {
             else
                 cmp_type = PRICE;
         }
+        key=input.GetKey();
     }
     if (!ticket_system.query_ticket(from_station, to_station, date, cmp_type))
         throw -1;
@@ -282,6 +312,7 @@ void System::query_transfer_ticket() {
             else
                 cmp_type = PRICE;
         }
+        key=input.GetKey();
     }
     if (!ticket_system.query_transfer_ticket(from_station, to_station, date,
                                              cmp_type))
@@ -311,12 +342,20 @@ void System::buy_ticket() {
             char c = input.GetChar();
             if (c == 'y') if_wait = true;
         }
+        key=input.GetKey();
     }
-    if (user_system.find_user(user_id) == User()) throw -1;
+    User find_user = user_system.find_user(user_id);
+    if (find_user == User()) throw -1;
+    if(!find_user.logged_in) throw -1;
+    // cerr<<"find user"<<user_id<<endl;
     if (!train_system.find_train(ticket.trainID).is_released()) throw -1;
-    order result(ticket, num, user_id);
+    ticket.train = train_system.find_train(ticket.trainID);
+    // std::cerr<<"release found"<<endl;
+    order result(ticket, num, user_id,"");
+    // std::cerr<<"here\n";
     if (!ticket_system.buy_ticket(ticket, num, if_wait, result, user_id))
         throw -1;
+    cout << result.status << endl;
     user_system.add_ticket(user_id, result.ticket, result.num, result.status);
 }
 
@@ -331,9 +370,13 @@ void System::refund_ticket() {
         } else if (key == 'n') {
             num = input.GetInteger();
         }
+        key=input.GetKey();
     }
+     --num;
     order refunded_order = user_system.refund_ticket(user_id, num);
     if (refunded_order == order()) throw -1;
+   
+    // std::cerr<<"here\n";
     user_system.modify_oder(refunded_order, "refunded");
     order result =
         ticket_system.refund_ticket(refunded_order.ticket, refunded_order.num);
@@ -343,14 +386,16 @@ void System::refund_ticket() {
 
 void System::query_order() {
     char key = input.GetKey();
+    // cerr<<key<<endl;
     String user_id = input.GetString();
+    // cerr<<key<<' '<<user_id<<endl;
     if (!user_system.query_ordered_tickets(user_id)) throw -1;
 }
 
 void System::clean() {
-    train_system.~TrainSystem();
-    user_system.~UserSystem();
-    ticket_system.~TicketSystem();
+    train_system.clean_up();
+    user_system.clean_up();
+    ticket_system.clean_up();
     cout << 0 << endl;
     /*
     TODO: clean all data files & cache

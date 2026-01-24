@@ -1,12 +1,12 @@
 #include "../../include/system/UserSystem.hpp"
 #include "../../include/system/TicketSystem.hpp"
-
 using namespace std;
 namespace sjtu {
 
 bool UserSystem::add_user(const User& new_user) {
     auto res = user_tree.find(new_user.UserName);
-    if (res.size() == 0) return false;
+    if (res.size() != 0) return false;
+    // std::cerr<<"adding user "<<new_user.UserName<<endl;
     user_tree.insert(new_user.UserName, new_user);
     return true;
 }
@@ -18,7 +18,9 @@ bool UserSystem::delete_user(String user_id) {
 }
 bool UserSystem::login(String user_id, String password) {
     auto res = user_tree.find(user_id);
+    // std::cerr<<"USR FIND "<<res.size()<<endl;
     if (res.size() == 0) return false;
+    // std::cerr<<"found user "<<res[0].value.UserName<<' '<<res[0].value.PassWord<<endl;
     User u = res[0].value;
     if (u.PassWord != password) return false;
     if (u.logged_in) return false;
@@ -54,6 +56,7 @@ bool UserSystem::query_ordered_tickets(const String& user_id) {
     auto res = user_tree.find(user_id);
     if (res.size() == 0) return false;
     User u = res[0].value;
+    if(!u.logged_in) return false;
     cout<<u.bought_tickets.size()<<endl;
     for (size_t i = 0; i < u.bought_tickets.size(); i++) {
         order t = u.bought_tickets[i];
@@ -70,15 +73,17 @@ void UserSystem::add_ticket(String user_id, const Ticket& ticket,int num,string 
     auto res = user_tree.find(user_id);
     if (res.size() == 0) return;
     User u = res[0].value;
-    u.bought_tickets.push_back(order{ticket,num,user_id});
+    u.bought_tickets.push_back(order{ticket,num,user_id,status});
     u.bought_tickets[u.bought_tickets.size()-1].pos = u.bought_tickets.size()-1;
     user_tree.erase(res[0].index, res[0].value);
     user_tree.insert(u.UserName, u);
 }
 order UserSystem::refund_ticket(String user_id, int pos) {
     auto res = user_tree.find(user_id);
+    // std::cerr<<"refund find "<<res.size()<<endl;
     if (res.size() == 0) return order();
     User u = res[0].value;
+    if(!u.logged_in) return order();
     if (pos < 0 || pos >= (int)u.bought_tickets.size()) return order();
     order target = u.bought_tickets[pos];
     // u.bought_tickets.erase(u.bought_tickets.begin() + pos);
@@ -95,4 +100,7 @@ void UserSystem::modify_oder(order &o,string new_sta){
     user_tree.erase(res[0].index, res[0].value);
     user_tree.insert(u.UserName, u);
 }
-}  // namespace sjtu
+void UserSystem::clean_up() {
+    user_tree.clean_up();
+} 
+} // namespace sjtu

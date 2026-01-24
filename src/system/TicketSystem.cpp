@@ -5,17 +5,24 @@ using namespace std;
 namespace sjtu {
 
 bool TicketSystem::add_ticket(const Train& train) {
+    // std::cerr<<"here!!\n";
     for (int day = train.sale_begin; day <= train.sale_end; day++) {
         for (int i = 0; i < train.stationNum - 1; i++) {
             TicketKey key{day, train.stations[i]};
             for(int j=i+1;j<train.stationNum;j++)
             {
-                 Ticket ticket(const_cast<Train*>(&train), train.ID,
+                // std::cerr<<"!!"<<train.seat_res.size()<<'\n';
+                //  std::cerr<<train.stations.size()<<' '<<train.stations[0]<<'\n';
+                 Ticket ticket(train, train.ID,
                           train.stations[i], train.stations[j], day);
+                // std::cerr<<"added ticket "<<train.ID<<' '<<train.stations[i]<<' '<<train.stations[j]<<' '<<day<<endl;
                 ticket_tree.insert(key, ticket);
+
+               
             }
         }
     }
+    // std::cerr<<"addded\n";
     return true;
 }
 bool TicketSystem::Compare_with_cost(
@@ -42,11 +49,13 @@ bool TicketSystem::query_ticket(const String& from_station,
     TicketKey low_key{date, from_station};
     TicketKey high_key{date, to_station};
     auto low_res = ticket_tree.find(low_key);
+    // std::cerr<<"low res size "<<low_res.size()<<endl;
     if (low_res.size() == 0) return false;
     if (cmp_type == PRICE)
         low_res.sort(Compare_with_cost);
     else if (cmp_type == TIME)
         low_res.sort(Compare_with_time);
+    // std::cerr<<"after sort "<<low_res.size()<<endl;
     vector<BPlusTree<TicketKey, Ticket>::Key> final_res;
     for (int i = 0; i < low_res.size(); i++) {
         Ticket t = low_res[i].value;
@@ -58,6 +67,7 @@ bool TicketSystem::query_ticket(const String& from_station,
     cout << final_res.size() << endl;
     for (auto& item : final_res) {
         Ticket t = item.value;
+        std::cerr<<"ticket "<<t.trainID<<' '<<t.from_station<<' '<<t.to_station<<' '<<t.date<<endl;
        t.printTicket(from_station, to_station);
     }
     return true;
@@ -135,15 +145,20 @@ bool TicketSystem::query_transfer_ticket(const String& from_station,
 }
 bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
                               order& result, const String& UserID) {
-    Train tr=*ticket.train_ptr;
+    
+    // std::cerr<<ticket.trainID<<' '<<num<<' '<<UserID<<'\n';
+    
+    Train tr=ticket.train;
+    std::cerr<<tr.seat_res.size()<<endl;
     int seat_res=tr.get_seat_res(ticket.from_station,ticket.to_station,
                                     ticket.date);
+    std::cerr<<"seat res "<<seat_res<<endl;
     if(seat_res<num)
      {
         if(!if_wait) return false;
         else
         {
-            waiting_list.push_back(order{ticket,num,UserID});
+            waiting_list.push_back(order{ticket,num,UserID,"queue"});
             result.ticket=ticket;
             result.num=num; 
             result.UserID=UserID;
@@ -163,7 +178,7 @@ bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
     }
 }
 order TicketSystem::refund_ticket(const Ticket& ticket, int num) {
-    Train tr=*ticket.train_ptr;
+    Train tr=ticket.train;
     tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date,-num);
     // process waiting list
     order res;
@@ -176,5 +191,8 @@ order TicketSystem::refund_ticket(const Ticket& ticket, int num) {
         }
     }
     return res;
+}
+void TicketSystem::clean_up() {
+    ticket_tree.clean_up();
 }
 }  // namespace sjtu

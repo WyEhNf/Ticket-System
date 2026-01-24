@@ -23,6 +23,7 @@ bool TrainSystem::release_train(const String& train_id) {
     auto res = train_tree.find(train_id);
     if (res.size() == 0) return false;
     Train t = res[0].value;
+    // std::cerr<<t.ID<<' '<<t.released<<endl;
     if (t.released) return false;
     t.released = true;
     for(int i=0;i<t.sale_end-t.sale_begin+1;i++)
@@ -36,7 +37,13 @@ bool TrainSystem::release_train(const String& train_id) {
     }
     train_tree.erase(res[0].index, res[0].value);
     train_tree.insert(t.ID, t);
+    // std:cerr<<"released train "<<t.ID<<endl;
+    Train check = find_train(train_id);
+    // std::cerr<<"check released "<<check.ID<<' '<<check.released<<' '<<check.seat_res.size()<<endl;
     return true;
+}
+void TrainSystem::clean_up() {
+    train_tree.clean_up();
 }
 // namespace sjtu
 }

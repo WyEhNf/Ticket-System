@@ -9,7 +9,7 @@ class Train {
    private:
     char type;
     String ID;
-    bool released = false;
+    bool released=false;
     int stationNum, seatNum;
     int startTime, sale_begin, sale_end;
     vector<String> stations;
@@ -37,7 +37,7 @@ class Train {
           stations(stations),
           prices(prices),
           travelTimes(travelTimes),
-          stopoverTimes(stopoverTimes) {
+          stopoverTimes(stopoverTimes) { ;
     }
     Train(const Train& other)
         : type(other.type),
@@ -51,7 +51,7 @@ class Train {
           prices(other.prices),
           travelTimes(other.travelTimes),
           seat_res(other.seat_res),
-          stopoverTimes(other.stopoverTimes) {
+          stopoverTimes(other.stopoverTimes),released(other.released){
     }
     ~Train() = default;
     Train& operator=(const Train& other) {
@@ -64,9 +64,20 @@ class Train {
         travelTimes = other.travelTimes;
         stopoverTimes = other.stopoverTimes;
         seat_res = other.seat_res;
+        released = other.released;
+
         return *this;
     }
-    bool operator==(const Train& other)const {
+    void initialise() {
+        // vector<int> seat_row;
+        // for (int i = 0; i < stationNum - 1; i++) {
+        //     seat_row.push_back(seatNum);
+        // }
+        // for (int i = 0; i < sale_end - sale_begin + 1; i++) {
+        //     seat_res.push_back(seat_row);
+        // }
+    }
+    bool operator==(const Train& other) const {
         return ID == other.ID;
     }
     bool operator!=(const Train& other) const {
@@ -81,7 +92,7 @@ class Train {
     bool operator>(const Train& other) const {
         return !(*this <= other);
     }
-    bool operator>=(const Train& other) const  {
+    bool operator>=(const Train& other) const {
         return !(*this < other);
     }
     void release() {
@@ -92,12 +103,14 @@ class Train {
     }
     int get_seat_res(String from_station, String to_station, int date) {
         int day_index = date - sale_begin;
-        int from,to;
-        for(int i=0;i<stationNum;i++)
-        {
-            if(stations[i]==from_station) from=i;
-            if(stations[i]==to_station) to=i;
+        int from, to;
+        for (int i = 0; i < stationNum; i++) {
+            if (stations[i] == from_station) from = i;
+            if (stations[i] == to_station) to = i;
         }
+        // std::cerr<<day_index<<'\n';
+        // std::cerr << "get_seat_res " << from << ' ' << to << ' ' << day_index
+        //           << ' ' << seat_res.size() << endl;
         int min_seat = seat_res[day_index][from];
         for (int i = from; i < to; i++) {
             if (seat_res[day_index][i] < min_seat)
@@ -108,47 +121,44 @@ class Train {
     void update_seat_res(String from_station, String to_station, int date,
                          int num) {
         int day_index = date - sale_begin;
-        int from,to;
-        for(int i=0;i<stationNum;i++)
-        {
-            if(stations[i]==from_station) from=i;
-            if(stations[i]==to_station) to=i;
+        int from, to;
+        for (int i = 0; i < stationNum; i++) {
+            if (stations[i] == from_station) from = i;
+            if (stations[i] == to_station) to = i;
         }
         for (int i = from; i < to; i++) {
             seat_res[day_index][i] -= num;
         }
     }
-    string int_to_date(int date) const
-    {
-        if(date<=30) return "06-"+String::FromInt(date);
-        else if(date<=61) return "07-"+String::FromInt(date-30);
-        else return "08-"+String::FromInt(date-61);
+    string int_to_date(int date) const {
+        if (date <= 30)
+            return "06-" + String::FromInt(date);
+        else if (date <= 61)
+            return "07-" + String::FromInt(date - 30);
+        else
+            return "08-" + String::FromInt(date - 61);
     }
-    string int_to_time(int time) const
-    {
-        int hour=time/60;
-        int minute=time%60;
-        return String::FromInt(hour)+":"+String::FromInt(minute);
+    string int_to_time(int time) const {
+        int hour = time / 60;
+        int minute = time % 60;
+        return String::FromInt(hour) + ":" + String::FromInt(minute);
     }
-    String realTime(int time,int date) const
-    {
-        int realdate=date+time/1440;
-        int realtime=time%1440;
-        return int_to_date(realdate)+" "+int_to_time(realtime);
+    String realTime(int time, int date) const {
+        int realdate = date + time / 1440;
+        int realtime = time % 1440;
+        return int_to_date(realdate) + " " + int_to_time(realtime);
     }
-    String getTime(String station,int date)
-    {
-        int time=startTime;
-        for(int i=1;i<stationNum;i++)
-        {
-            time+=travelTimes[i-1];
-            if(stations[i]==station) return realTime(time, date);
-            time+=stopoverTimes[i-1];
+    String getTime(String station, int date) {
+        int time = startTime;
+        if (stations[0] == station) return realTime(time, date);
+        for (int i = 1; i < stationNum; i++) {
+            time += travelTimes[i - 1];
+            if (stations[i] == station) return realTime(time, date);
+            if (i != stationNum - 1) time += stopoverTimes[i - 1];
         }
         return String("error!");
     }
-    
 };
 
 }  // namespace sjtu
-// #endif   
+// #endif

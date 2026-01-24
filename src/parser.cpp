@@ -106,11 +106,11 @@ auto Input::GetTime() -> int {
     return res;
 }
 auto Input::GetString() -> String {
-    assert(las_c_ == ' ');
+    // assert(las_c_ == ' ');
     int pos = 0;
     std::string res;
     std::cin.get(las_c_);
-    while (las_c_ != ' ' && las_c_ != '\n') {
+    while (las_c_ != ' ' && las_c_ != '\n'&&las_c_!='|') {
         res += las_c_;
         std::cin.get(las_c_);
     }
@@ -138,6 +138,7 @@ auto Input::GetStringArray() -> vector<String> {
     int pos = 0;
     vector<String> res;
     String val = GetString();
+    // std::cout<<"get_str:"<<val<<'\n';
     while (las_c_ == '|') {
         res.push_back(val);
         val = GetString();
