@@ -42,7 +42,7 @@ class BPlusTree {
         int pos;
     };
 
-    static constexpr int CACHE_CAPACITY = 200;
+    static constexpr int CACHE_CAPACITY = 20;
 
     sjtu::list<CacheBlock> cache_list;
     sjtu::map<int, typename sjtu::list<CacheBlock>::iterator> cache_map;
