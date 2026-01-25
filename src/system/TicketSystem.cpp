@@ -1,11 +1,13 @@
 #include "../../include/system/TicketSystem.hpp"
 #include <iostream>
-
+#include <time.h>
 using namespace std;
 namespace sjtu {
 
 bool TicketSystem::add_ticket(const Train& train) {
     // std::cerr<<"here!!\n";
+    clock_t S=clock();
+    int cnt=0;
     for (int day = train.sale_begin; day <= train.sale_end; day++) {
         for (int i = 0; i < train.stationNum - 1; i++) {
             TicketKey key{day, train.stations[i]};
@@ -17,13 +19,15 @@ bool TicketSystem::add_ticket(const Train& train) {
                  Ticket ticket(train, train.ID,
                           train.stations[i], train.stations[j], day);
                 // std::cerr<<"added ticket "<<train.ID<<' '<<train.stations[i]<<' '<<train.stations[j]<<' '<<day<<endl;
+                clock_t T=clock();
                 ticket_tree.insert(key, ticket);
-
-               
+                cerr<<(double)(T-S)/CLOCKS_PER_SEC<<'\n';
+               cnt++;
             }
         }
     }
     // std::cerr<<"addded\n";
+    std::cerr<<"added tickets: "<<cnt<<'\n';
     return true;
 }
 bool TicketSystem::Compare_with_cost(

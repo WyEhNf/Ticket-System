@@ -250,7 +250,7 @@ void System::release_train() {
     if (t == Train()) throw -1;
     // std::cerr<<"releasing train "<<train_id<<endl;
     if (!train_system.release_train(train_id)) throw -1;
-    // std::cerr<<"released\n";
+    std::cerr<<"released\n";
     Train new_t=train_system.find_train(train_id);
     ticket_system.add_ticket(new_t);
     // std::cerr<<"wtf\n";
