@@ -1,32 +1,30 @@
 #pragma once
+#include "../memoryriver/memoryriver.hpp"
 #include "list.hpp"
 #include "map.hpp"
-#include "../memoryriver/memoryriver.hpp"
 #include "vector.hpp"
+
 
 using namespace std;
 namespace sjtu {
 template <typename IndexType, typename ValueType, int ORDER = 32>
 class BPlusTree {
-    public:
+   public:
     struct Key {
         IndexType index;
         ValueType value;
 
         bool operator==(const Key& o) const {
-            return index == o.index &&
-                   value == o.value;
+            return index == o.index && value == o.value;
         }
 
         bool operator<(const Key& o) const {
-            if (!(index == o.index))
-                return index < o.index;
+            if (!(index == o.index)) return index < o.index;
             return value < o.value;
         }
     };
-   private:
-    
 
+   private:
     struct Node {
         bool is_leaf = false;
         int key_cnt = 0;
@@ -482,17 +480,17 @@ class BPlusTree {
         if (u != root() && x.key_cnt < min_leaf_keys()) fix_leaf(u);
     }
 
-    vector<ValueType> find(const IndexType& idx) {
+    vector<Key> find(const IndexType& idx) {
         Key low{};
         low.index = idx;
         low.value = numeric_limits<ValueType>::min();
         int u = find_leaf(low);
-        vector<ValueType> result;
+        vector<Key> result;
         while (u != -1) {
             Node x = node(u);
             for (int i = 0; i < x.key_cnt; i++) {
                 if (x.keys[i].index == low.index) {
-                    result.push_back(x.keys[i].value);
+                    result.push_back(x.keys[i]);
                 } else if (x.keys[i].index > low.index) {
                     return result;
                 }
@@ -501,5 +499,20 @@ class BPlusTree {
         }
         return result;
     }
-};// namespace sjtu
-}
+    void clean_up() {
+        cache_list.clear();
+        cache_map.clear();
+
+        river.clean_up();
+        Node r;
+        r.is_leaf = true;
+        r.parent = -1;
+        r.key_cnt = 0;
+
+        int rp = river.write(r);
+        river.write_info(rp, 1);
+        river.write_info(1, 2);
+        add_to_cache(r, rp);
+    }  // namespace sjtu
+};  // namespace sjtu
+}  // namespace sjtu
