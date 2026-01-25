@@ -57,13 +57,9 @@ void System::run() {
 void System::add_user() {
     auto key = input.GetKey();
     String cur_name;
-    bool is_first = 0;
-    if (key == 'c')
-        cur_name = input.GetString(), key = input.GetKey();
-    else
-        cur_name = String(""), is_first = 1;
+    bool is_first = (user_cnt == 0);
     User new_user;
-    while (key != '\n') {
+    while (key != '\n')  {
         String str;
         if (key != 'g') str = input.GetString();
         // std::cerr<<"key: "<<key<<std::endl;
@@ -80,6 +76,8 @@ void System::add_user() {
         } else if (key == 'g') {
             int pri = input.GetInteger();
             new_user.privilege = pri;
+        } else if (key == 'c') {
+            cur_name = str;
         }
         key=input.GetKey();
     }
@@ -93,14 +91,26 @@ void System::add_user() {
         if (user_system.find_user(new_user.UserName) != User()) throw -1;
         user_system.add_user(new_user);
     }
+    ++user_cnt;
     cout << 0 << endl;
 }
 
 void System::login() {
     char key = input.GetKey();
-    String user_id = input.GetString();
-    key = input.GetKey();
-    String password = input.GetString();
+    String user_id;
+    String password;
+    while(key!='\n')
+    {
+        if(key=='u')
+        {
+            user_id=input.GetString();
+        }
+        else if(key=='p')
+        {
+            password=input.GetString();
+        }
+        key=input.GetKey();
+    }
     // cout<<"login "<<user_id<<' '<<password<<endl;
     if (!user_system.login(user_id, password)) throw -1;
     cout << 0 << endl;
@@ -116,12 +126,22 @@ void System::logout() {
 void System::query_profile() {
 
     char key = input.GetKey();
-    String cur_id= input.GetString();
+    String cur_id,user_id;
+    while(key!='\n')
+    {
+        if(key=='u')
+        {
+            user_id=input.GetString();
+        }
+        else if(key=='c')
+        {
+            cur_id=input.GetString();
+        }
+        key=input.GetKey();
+    }
     User c= user_system.find_user(cur_id);
     if (c == User()) throw -1;
-    if(!c.logged_in) throw -1;
-    key=input.GetKey();
-    String user_id = input.GetString();
+    if(!c.logged_in) throw -1;;
     User u = user_system.find_user(user_id);
     if (u == User()) throw -1;
     if(c.privilege<=u.privilege&&cur_id!=user_id) throw -1; 
@@ -131,36 +151,48 @@ void System::query_profile() {
 
 void System::modify_profile() {
     char key = input.GetKey();
-    String cur_username = input.GetString();
-    key = input.GetKey();
-    String target_username = input.GetString();
+    String cur_username;
+    String target_username;
     bool qualified = true;
-    User cur_user = user_system.find_user(cur_username);
-    User target_user = user_system.find_user(target_username);
-    if (cur_username != target_username) {
-        if (cur_user.privilege <= target_user.privilege) qualified = false;
-    }
-    key = input.GetKey();
-    User original_user = target_user;
+    User tmp;
+    bool isg=0,isp=0,isn=0,ism=0;
     while (key != '\n') {
         String str;
         if (key != 'g') str = input.GetString();
         if (key == 'p') {
-            target_user.PassWord = str;
+            tmp.PassWord = str;
+            isp=1;
         } else if (key == 'n') {
-            target_user.name = str;
+            tmp.name = str;
+            isn=1;
         } else if (key == 'm') {
-            target_user.MailAdr = str;
+            tmp.MailAdr = str;
+            ism=1;
         } else if (key == 'g') {
             int pri = input.GetInteger();
-            if (cur_user.privilege <= pri)
-                qualified = false;
-            else
-                target_user.privilege = pri;
+            tmp.privilege = pri;
+            isg=1;
+        }else if(key=='u')
+        {
+            target_username=str;
+        }else if(key=='c')
+        {
+            cur_username=str;
         }
         key=input.GetKey();
     }
-    if (!qualified) throw -1;
+    User original_user = user_system.find_user(target_username);
+    if (original_user == User()) throw -1;
+    User cur_user = user_system.find_user(cur_username);
+    if(cur_user==User()) throw -1;
+    if(!cur_user.logged_in) throw -1;
+    User target_user = original_user;
+    if (isp) target_user.PassWord = tmp.PassWord;
+    if (isn) target_user.name = tmp.name;
+    if (ism) target_user.MailAdr = tmp.MailAdr;
+    if (isg) target_user.privilege = tmp.privilege;
+    if(original_user!=target_user&&original_user.privilege<=target_user.privilege) throw -1;
+    if(target_user.privilege>=cur_user.privilege) throw -1;
     user_system.modify_user(original_user.UserName, target_user);
     cout << 0 << endl;
 }
@@ -226,11 +258,21 @@ void System::release_train() {
 
 void System::query_train() {
     char key = input.GetKey();
-    String train_id = input.GetString();
+    String train_id;int date;
+    while(key!='\n')
+    {
+        if(key=='i')
+        {
+            train_id=input.GetString();
+        }
+        else if(key=='d')
+        {
+            date=input.GetDate();
+        }
+        key=input.GetKey();
+    }
     Train train = train_system.find_train(train_id);
     // std::cerr<<"found"<<train.ID<<endl;
-    key = input.GetKey();
-    int date = input.GetDate();
     if (train == Train()) throw -1;
     if (date < train.sale_begin || date > train.sale_end) throw -1;
     int time = train.startTime;
@@ -441,6 +483,7 @@ void System::query_order() {
 }
 
 void System::clean() {
+    user_cnt=0;
     train_system.clean_up();
     user_system.clean_up();
     ticket_system.clean_up();

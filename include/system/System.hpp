@@ -11,7 +11,7 @@ namespace sjtu {
         TrainSystem train_system;
         UserSystem user_system;
         Input input;;
-        int timestamp=0;
+        int timestamp=0,user_cnt=0;
 
     public:
         ~System() = default;
