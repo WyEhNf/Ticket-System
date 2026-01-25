@@ -8,7 +8,7 @@ using namespace std;
 namespace sjtu {
 template <typename IndexType, typename ValueType, int ORDER = 32>
 class BPlusTree {
-   private:
+    public:
     struct Key {
         IndexType index;
         ValueType value;
@@ -24,6 +24,8 @@ class BPlusTree {
             return value < o.value;
         }
     };
+   private:
+    
 
     struct Node {
         bool is_leaf = false;
