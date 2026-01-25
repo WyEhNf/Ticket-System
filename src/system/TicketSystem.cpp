@@ -13,6 +13,7 @@ bool TicketSystem::add_ticket(const Train& train) {
             {
                 // std::cerr<<"!!"<<train.seat_res.size()<<'\n';
                 //  std::cerr<<train.stations.size()<<' '<<train.stations[0]<<'\n';
+                // std::cerr<<"adding ticket "<<train.ID<<' '<<train.stations[i]<<' '<<train.stations[j]<<' '<<day<<endl;
                  Ticket ticket(train, train.ID,
                           train.stations[i], train.stations[j], day);
                 // std::cerr<<"added ticket "<<train.ID<<' '<<train.stations[i]<<' '<<train.stations[j]<<' '<<day<<endl;
@@ -49,7 +50,9 @@ bool TicketSystem::query_ticket(const String& from_station,
     TicketKey low_key{date, from_station};
     TicketKey high_key{date, to_station};
     auto low_res = ticket_tree.find(low_key);
+    // std::cerr<<"query ticket from "<<from_station<<' '<<to_station<<' '<<date<<endl;
     // std::cerr<<"low res size "<<low_res.size()<<endl;
+    // std::cerr<<low_res.size()<<endl;
     if (low_res.size() == 0) return false;
     if (cmp_type == PRICE)
         low_res.sort(Compare_with_cost);
@@ -59,6 +62,7 @@ bool TicketSystem::query_ticket(const String& from_station,
     vector<BPlusTree<TicketKey, Ticket>::Key> final_res;
     for (int i = 0; i < low_res.size(); i++) {
         Ticket t = low_res[i].value;
+        // std::cerr<<t.to_station<<'\n';
         if (t.to_station == to_station) {
             final_res.push_back(low_res[i]);
         }
@@ -67,7 +71,7 @@ bool TicketSystem::query_ticket(const String& from_station,
     cout << final_res.size() << endl;
     for (auto& item : final_res) {
         Ticket t = item.value;
-        std::cerr<<"ticket "<<t.trainID<<' '<<t.from_station<<' '<<t.to_station<<' '<<t.date<<endl;
+        // std::cerr<<"ticket "<<t.trainID<<' '<<t.from_station<<' '<<t.to_station<<' '<<t.date<<endl;
        t.printTicket(from_station, to_station);
     }
     return true;
@@ -149,16 +153,18 @@ bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
     // std::cerr<<ticket.trainID<<' '<<num<<' '<<UserID<<'\n';
     
     Train tr=ticket.train;
-    std::cerr<<tr.seat_res.size()<<endl;
+    // std::cerr<<tr.seat_res.size()<<endl;
     int seat_res=tr.get_seat_res(ticket.from_station,ticket.to_station,
                                     ticket.date);
-    std::cerr<<"seat res "<<seat_res<<endl;
+    // std::cerr<<"seat res "<<seat_res<<endl;
     if(seat_res<num)
      {
+        // std::cerr<<"wtf\n";
         if(!if_wait) return false;
         else
         {
-            waiting_list.push_back(order{ticket,num,UserID,"queue"});
+            // std::cerr<<"still queue\n";
+            // waiting_list.push_back(order{ticket,num,UserID,"queue"});
             result.ticket=ticket;
             result.num=num; 
             result.UserID=UserID;
@@ -168,7 +174,7 @@ bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
         }
      }
     else {
-        tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date, num);
+        // std::cerr<<"success buy\n";
         result.ticket=ticket;
         result.num=num;
         result.UserID=UserID;
@@ -177,21 +183,7 @@ bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
         return true;
     }
 }
-order TicketSystem::refund_ticket(const Ticket& ticket, int num) {
-    Train tr=ticket.train;
-    tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date,-num);
-    // process waiting list
-    order res;
-    for (auto it = waiting_list.begin(); it != waiting_list.end();) {
-        if(tr.get_seat_res(ticket.from_station, ticket.to_station, ticket.date) >= it->num) {
-            TicketSystem::buy_ticket(it->ticket, it->num, false, res,it->UserID);
-            it = waiting_list.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    return res;
-}
+
 void TicketSystem::clean_up() {
     ticket_tree.clean_up();
 }

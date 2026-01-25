@@ -69,14 +69,16 @@ bool UserSystem::query_ordered_tickets(const String& user_id) {
     }
     return true;
 }
-void UserSystem::add_ticket(String user_id, const Ticket& ticket,int num,string status) {
+order UserSystem::add_ticket(String user_id, const Ticket& ticket,int num,string status) {
     auto res = user_tree.find(user_id);
-    if (res.size() == 0) return;
+    if (res.size() == 0) return order();
     User u = res[0].value;
     u.bought_tickets.push_back(order{ticket,num,user_id,status});
     u.bought_tickets[u.bought_tickets.size()-1].pos = u.bought_tickets.size()-1;
     user_tree.erase(res[0].index, res[0].value);
     user_tree.insert(u.UserName, u);
+    return u.bought_tickets[u.bought_tickets.size()-1];
+
 }
 order UserSystem::refund_ticket(String user_id, int pos) {
     auto res = user_tree.find(user_id);
@@ -92,9 +94,10 @@ order UserSystem::refund_ticket(String user_id, int pos) {
     user_tree.insert(u.UserName, u);
     return target;
 }
-void UserSystem::modify_oder(order &o,string new_sta){
+void UserSystem::modify_order(order &o,string new_sta){
     auto res = user_tree.find(o.UserID);
     if (res.size() == 0) return;
+    // std::cerr<<o.pos<<endl;
     User u = res[0].value;
     u.bought_tickets[o.pos].status=new_sta;
     user_tree.erase(res[0].index, res[0].value);

@@ -101,7 +101,7 @@ void System::login() {
     String user_id = input.GetString();
     key = input.GetKey();
     String password = input.GetString();
-    cout<<"login "<<user_id<<' '<<password<<endl;
+    // cout<<"login "<<user_id<<' '<<password<<endl;
     if (!user_system.login(user_id, password)) throw -1;
     cout << 0 << endl;
 }
@@ -235,7 +235,8 @@ void System::query_train() {
     if (date < train.sale_begin || date > train.sale_end) throw -1;
     int time = train.startTime;
     int price = 0;
-    std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
+    // std::cerr<<date<<'\n';
+    // std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
     for (int i = 0; i < train.stationNum; i++) {
         String arr_time, leave_time;
         if (i == 0)
@@ -356,8 +357,20 @@ void System::buy_ticket() {
     // std::cerr<<"here\n";
     if (!ticket_system.buy_ticket(ticket, num, if_wait, result, user_id))
         throw -1;
-    cout << result.status << endl;
-    user_system.add_ticket(user_id, result.ticket, result.num, result.status);
+    order temp_order=user_system.add_ticket(user_id,ticket,num,result.status);
+    if(temp_order==order()) throw -1;
+    if(result.status=="success")
+    {
+        Train tr=ticket.train;
+        tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date, num);
+        train_system.train_tree.erase(ticket.trainID, tr);
+        train_system.train_tree.insert(ticket.trainID, tr);
+    }else if(result.status=="queue")
+    {
+        ticket_system.waiting_list.push_back(temp_order);
+    }
+    // cout << result.status << endl;
+    
 }
 
 void System::refund_ticket() {
@@ -378,10 +391,44 @@ void System::refund_ticket() {
     if (refunded_order == order()) throw -1;
    
     // std::cerr<<"here\n";
-    user_system.modify_oder(refunded_order, "refunded");
-    order result =
-        ticket_system.refund_ticket(refunded_order.ticket, refunded_order.num);
-    if (!(result == order())) user_system.modify_oder(result, "success");
+    user_system.modify_order(refunded_order, "refunded");
+    Train refund_train=refunded_order.ticket.train;
+    refund_train.update_seat_res(refunded_order.ticket.from_station, refunded_order.ticket.to_station, refunded_order.ticket.date, -refunded_order.num);
+    train_system.train_tree.erase(refunded_order.ticket.trainID, refund_train);
+    train_system.train_tree.insert(refunded_order.ticket.trainID, refund_train);
+    // order result =
+    //     ticket_system.refund_ticket(refunded_order.ticket, refunded_order.num);
+    order result;
+    // std::cerr<<"waiting_list size: "<<ticket_system.waiting_list.size()<<endl;
+    for (auto it = ticket_system.waiting_list.begin(); it != ticket_system.waiting_list.end();) {
+       Train tr=train_system.find_train(it->ticket.trainID);
+        int seat_res=tr.get_seat_res(it->ticket.from_station,it->ticket.to_station,
+                                    it->ticket.date);
+        // std::cerr<<"checking waiting ticket "<<it->ticket.trainID<<' '<<it->ticket.from_station<<' '<<it->ticket.to_station<<' '<<it->ticket.date<<endl;
+        // std::cerr<<"seat res for waiting ticket "<<seat_res<<endl;
+        if(seat_res>=it->num)
+        {
+            // std::cerr<<"found waiting ticket can be processed "<<it->ticket.trainID<<' '<<it->ticket.from_station<<' '<<it->ticket.to_station<<' '<<it->ticket.date<<endl;
+            result= *it;
+            result.status="success";
+            ticket_system.waiting_list.erase(it);
+            break;
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    // std::cerr<<"after processing waiting list\n";
+    if (!(result == order())) 
+    {
+        // std::cerr<<"processing waiting ticket "<<result.ticket.trainID<<' '<<result.ticket.from_station<<' '<<result.ticket.to_station<<' '<<result.ticket.date<<endl;
+        user_system.modify_order(result, "success");
+        Train tr=result.ticket.train;
+        tr.update_seat_res(result.ticket.from_station, result.ticket.to_station, result.ticket.date, result.num);
+        train_system.train_tree.erase(result.ticket.trainID, tr);
+        train_system.train_tree.insert(result.ticket.trainID, tr);
+    }
     cout << 0 << endl;
 }
 

@@ -43,7 +43,8 @@ class Ticket {
         return *this;
     }
     bool operator==(const Ticket& other) const {
-        return trainID == other.trainID;
+        return trainID == other.trainID&& from_station == other.from_station &&
+               to_station == other.to_station && date == other.date;
     }
     bool operator!=(const Ticket& other) const {
         return !(*this == other);

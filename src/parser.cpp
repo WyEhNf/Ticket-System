@@ -86,7 +86,7 @@ auto Input::GetDate() -> int {
     std::cin.get(las_c_);
     res += 10 * (las_c_ - '0');
     std::cin.get(las_c_);
-    res += las_c_ - '1';
+    res += las_c_ - '0';
     Skip();
     return res;
 }

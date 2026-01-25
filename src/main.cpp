@@ -13,6 +13,7 @@ void remove_data_file() {
 }
 int main()
 {
+    // freopen("my.out","w",stdout);
     remove_data_file();
     sjtu::System sys("ticket_system");
     sys.run();

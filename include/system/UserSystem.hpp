@@ -14,13 +14,13 @@ namespace sjtu{
         bool add_user(const User& new_user);
         bool delete_user(String user_id);
         User find_user(String user_id);
-        void add_ticket(String user_id,const Ticket& ticket,int num,string status);
+        order add_ticket(String user_id,const Ticket& ticket,int num,string status);
         order refund_ticket(String user_id,int pos);     
         bool query_ordered_tickets(const String& user_id);
         bool login(String user_id, String password);
         bool logout(String user_id);
         User modify_user(String user_id, const User& new_user);
-        void modify_oder(order &o,string new_sta);
+        void modify_order(order &o,string new_sta);
         void clean_up();
 
     };

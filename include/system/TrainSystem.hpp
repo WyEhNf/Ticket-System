@@ -1,3 +1,4 @@
+#pragma once
 #include "Train.hpp"
 #include "../container/bpt.hpp"
 using namespace std;
