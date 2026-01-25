@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <utility>
+#include <iostream>
 
 #include "exceptions.hpp"
 
@@ -328,11 +329,19 @@ class vector {
      * throw index_out_of_bound if pos is not in [0, size_)
      */
     T& at(const size_t& pos) {
-        if (pos >= size_) throw index_out_of_bound();
+        if (pos >= size_) 
+        {
+            std::cerr<<"at pos "<<pos<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         return data[pos];
     }
     const T& at(const size_t& pos) const {
-        if (pos >= size_) throw index_out_of_bound();
+        if (pos >= size_) 
+        {
+             std::cerr<<"at pos "<<pos<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         return data[pos];
     }
 
@@ -343,11 +352,18 @@ class vector {
      *   In STL this operator does not check the boundary but I want you to do.
      */
     T& operator[](const size_t& pos) {
-        if (pos >= size_) throw index_out_of_bound();
+        if (pos >= size_)
+        {
+            std::cerr<<"operator[] pos "<<pos<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        } 
         return data[pos];
     }
     const T& operator[](const size_t& pos) const {
-        if (pos >= size_) throw index_out_of_bound();
+        if (pos >= size_) {
+             std::cerr<<"operator[] pos "<<pos<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         return data[pos];
     }
     /**
@@ -426,7 +442,11 @@ class vector {
      * size_ because after inserting the size_ will increase 1.)
      */
     iterator insert(const size_t& ind, const T& value) {
-        if (ind > size_) throw index_out_of_bound();
+        if (ind > size_) 
+        {
+            std::cerr<<"insert ind "<<ind<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         if (size_ == capacity) expand();
         if (size_ > ind) {
             new (&data[size_]) T(std::move(data[size_ - 1]));
@@ -443,7 +463,11 @@ class vector {
         return insert(pos.ptr_ - pos.begin_, std::move(value));
     }
     iterator insert(const size_t& ind, T&& value) {
-        if (ind > size_) throw index_out_of_bound();
+        if (ind > size_) 
+        {
+            std::cerr<<"insert ind "<<ind<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         if (size_ == capacity) expand();
 
         if (size_ > ind) {
@@ -473,7 +497,11 @@ class vector {
      * throw index_out_of_bound if ind >= size_
      */
     iterator erase(const size_t& ind) {
-        if (ind >= size_) throw index_out_of_bound();
+        if (ind >= size_) 
+        {
+            std::cerr<<"erase ind "<<ind<<" size "<<size_<<"\n";
+            throw index_out_of_bound();
+        }
         for (size_t i = ind; i < size_ - 1; ++i) {
             data[i] = std::move(data[i + 1]);
         }
@@ -526,7 +554,7 @@ class vector {
         operator delete(data);
         data = newdata;
     }
-    void sort(bool (*compare)(const T&, const T&));
+    void sort(bool (*compare)( T&, T&));
 
    private:
     size_t size_, capacity;
@@ -535,7 +563,7 @@ class vector {
 
 
 template <typename T>
-void quick_sort(T* arr, int low, int high, bool (*compare)(const T&, const T&)) {
+void quick_sort(T* arr, int low, int high, bool (*compare)(T&,  T&)) {
     if (low < high) {
         // Partitioning index
         int pi = partition(arr, low, high, compare);
@@ -548,7 +576,7 @@ void quick_sort(T* arr, int low, int high, bool (*compare)(const T&, const T&)) 
 
 // Partition function for QuickSort
 template <typename T>
-int partition(T* arr, int low, int high, bool (*compare)(const T&, const T&)) {
+int partition(T* arr, int low, int high, bool (*compare)( T&,  T&)) {
     T pivot = arr[high];  // Choosing the last element as pivot
     int i = (low - 1);  // Index of the smaller element
 
@@ -565,7 +593,7 @@ int partition(T* arr, int low, int high, bool (*compare)(const T&, const T&)) {
 
 // Main sort function
 template <typename T>
-void vector<T>::sort(bool (*compare)(const T&, const T&)) {
+void vector<T>::sort(bool (*compare)( T&,  T&)) {
     if (size_ > 1) {
         quick_sort(data, 0, size_ - 1, compare);
     }

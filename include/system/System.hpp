@@ -32,6 +32,9 @@ namespace sjtu {
         void refund_ticket();
         void query_order();
         void clean();
+        int getPrice(Train& train,String from_station, String to_station)const;
+        int getTime(Train& train,int date,String from_station, String to_station)const;
+        void printTicket(Train& tr,int date, String from_station, String to_station);
     };
 
 }

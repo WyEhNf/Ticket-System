@@ -1,5 +1,6 @@
 #include "Ticket.hpp"
 #include "../container/bpt.hpp"
+#include "TrainSystem.hpp"
 using namespace std;
 namespace sjtu {
     enum CompareType {TIME, PRICE};
@@ -30,6 +31,7 @@ namespace sjtu {
         };
         BPlusTree<TicketKey, Ticket> ticket_tree;
         vector<order> waiting_list;
+        TrainSystem* train_system_ptr;
         friend class System;
 
     public:
@@ -40,11 +42,11 @@ namespace sjtu {
                           const String& to_station, int date, CompareType cmp_type);
         bool query_transfer_ticket(const String& from_station,
                                    const String& to_station, int date,CompareType cmp_type);
-        bool buy_ticket(const Ticket& ticket, int num,bool if_wait,order &result, const String& UserID);
+        bool buy_ticket(Train &tr,Ticket& ticket, int num,bool if_wait,order &result, const String& UserID);
          order refund_ticket(const Ticket& ticket, int num);
 
-        static bool Compare_with_cost(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
-        static bool Compare_with_time(const BPlusTree<TicketKey, Ticket>::Key &A, const  BPlusTree<TicketKey, Ticket>::Key &B);
+        static bool Compare_with_cost(BPlusTree<TicketKey, Ticket>::Key &A, BPlusTree<TicketKey, Ticket>::Key &B);
+        static bool Compare_with_time(BPlusTree<TicketKey, Ticket>::Key &A, BPlusTree<TicketKey, Ticket>::Key &B);
         void printTicket(Ticket t, String from_station, String to_station);
         void clean_up();
     };

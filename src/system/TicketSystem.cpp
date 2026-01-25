@@ -6,7 +6,7 @@ namespace sjtu {
 
 bool TicketSystem::add_ticket(const Train& train) {
     // std::cerr<<"here!!\n";
-    clock_t S=clock();
+    // clock_t S=clock();
     int cnt=0;
     for (int day = train.sale_begin; day <= train.sale_end; day++) {
         for (int i = 0; i < train.stationNum - 1; i++) {
@@ -19,28 +19,28 @@ bool TicketSystem::add_ticket(const Train& train) {
                  Ticket ticket(train, train.ID,
                           train.stations[i], train.stations[j], day);
                 // std::cerr<<"added ticket "<<train.ID<<' '<<train.stations[i]<<' '<<train.stations[j]<<' '<<day<<endl;
-                clock_t T=clock();
+                // clock_t T=clock();
                 ticket_tree.insert(key, ticket);
-                cerr<<(double)(T-S)/CLOCKS_PER_SEC<<'\n';
+                // cerr<<(double)(T-S)/CLOCKS_PER_SEC<<'\n';
                cnt++;
             }
         }
     }
     // std::cerr<<"addded\n";
-    std::cerr<<"added tickets: "<<cnt<<'\n';
+    // std::cerr<<"added tickets: "<<cnt<<'\n';
     return true;
 }
 bool TicketSystem::Compare_with_cost(
-    const BPlusTree<TicketKey, Ticket>::Key& A,
-    const BPlusTree<TicketKey, Ticket>::Key& B) {
+    BPlusTree<TicketKey, Ticket>::Key& A,
+    BPlusTree<TicketKey, Ticket>::Key& B) {
     if (A.value.getPrice() == B.value.getPrice()) {
         return A.value.trainID < B.value.trainID;
     }
     return A.value.getPrice() < B.value.getPrice();
 }
 bool TicketSystem::Compare_with_time(
-    const BPlusTree<TicketKey, Ticket>::Key& A,
-    const BPlusTree<TicketKey, Ticket>::Key& B) {
+    BPlusTree<TicketKey, Ticket>::Key& A,
+    BPlusTree<TicketKey, Ticket>::Key& B) {
     if (A.value.getPrice() == B.value.getPrice()) {
         return A.value.trainID < B.value.trainID;
     }
@@ -151,12 +151,11 @@ bool TicketSystem::query_transfer_ticket(const String& from_station,
     ans.second.value.printTicket(ans.second.value.from_station, ans.second.value.to_station);
     return true;
 }
-bool TicketSystem::buy_ticket(const Ticket& ticket, int num, bool if_wait,
+bool TicketSystem::buy_ticket(Train &tr, Ticket& ticket, int num, bool if_wait,
                               order& result, const String& UserID) {
     
     // std::cerr<<ticket.trainID<<' '<<num<<' '<<UserID<<'\n';
     
-    Train tr=ticket.train;
     // std::cerr<<tr.seat_res.size()<<endl;
     int seat_res=tr.get_seat_res(ticket.from_station,ticket.to_station,
                                     ticket.date);

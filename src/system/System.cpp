@@ -4,17 +4,20 @@
 
 using namespace std;
 namespace sjtu {
+    TrainSystem* Ticket::ptr = nullptr;
 System::System(const std::string& name)
     : ticket_system(name + "_ticket_tree.data"),
       train_system(name + "_train_tree.data"),
       user_system(name + "_user_tree.data") {
+    Ticket::ptr = &train_system;
+
 }
 void System::run() {
     while (true) {
         try {
             timestamp = input.GetTimestamp();
             string command = input.GetCommand();
-            cout<<"["<<timestamp<<"] ";
+            cout << "[" << timestamp << "] ";
             if (command == "add_user") {
                 add_user();
             } else if (command == "login") {
@@ -46,7 +49,7 @@ void System::run() {
             } else if (command == "clean") {
                 clean();
             } else if (command == "exit") {
-                std::cout<<"bye"<<std::endl;
+                std::cout << "bye" << std::endl;
                 break;
             }
         } catch (int) {
@@ -59,7 +62,7 @@ void System::add_user() {
     String cur_name;
     bool is_first = (user_cnt == 0);
     User new_user;
-    while (key != '\n')  {
+    while (key != '\n') {
         String str;
         if (key != 'g') str = input.GetString();
         // std::cerr<<"key: "<<key<<std::endl;
@@ -79,9 +82,10 @@ void System::add_user() {
         } else if (key == 'c') {
             cur_name = str;
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
-    // cout<<new_user.UserName<<' '<<new_user.PassWord<<' '<<new_user.privilege<<endl;
+    // cout<<new_user.UserName<<' '<<new_user.PassWord<<'
+    // '<<new_user.privilege<<endl;
     if (is_first) {
         new_user.privilege = 10;
         user_system.add_user(new_user);
@@ -99,17 +103,13 @@ void System::login() {
     char key = input.GetKey();
     String user_id;
     String password;
-    while(key!='\n')
-    {
-        if(key=='u')
-        {
-            user_id=input.GetString();
+    while (key != '\n') {
+        if (key == 'u') {
+            user_id = input.GetString();
+        } else if (key == 'p') {
+            password = input.GetString();
         }
-        else if(key=='p')
-        {
-            password=input.GetString();
-        }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     // cout<<"login "<<user_id<<' '<<password<<endl;
     if (!user_system.login(user_id, password)) throw -1;
@@ -124,27 +124,23 @@ void System::logout() {
 }
 
 void System::query_profile() {
-
     char key = input.GetKey();
-    String cur_id,user_id;
-    while(key!='\n')
-    {
-        if(key=='u')
-        {
-            user_id=input.GetString();
+    String cur_id, user_id;
+    while (key != '\n') {
+        if (key == 'u') {
+            user_id = input.GetString();
+        } else if (key == 'c') {
+            cur_id = input.GetString();
         }
-        else if(key=='c')
-        {
-            cur_id=input.GetString();
-        }
-        key=input.GetKey();
+        key = input.GetKey();
     }
-    User c= user_system.find_user(cur_id);
+    User c = user_system.find_user(cur_id);
     if (c == User()) throw -1;
-    if(!c.logged_in) throw -1;;
+    if (!c.logged_in) throw -1;
+    ;
     User u = user_system.find_user(user_id);
     if (u == User()) throw -1;
-    if(c.privilege<=u.privilege&&cur_id!=user_id) throw -1; 
+    if (c.privilege <= u.privilege && cur_id != user_id) throw -1;
     cout << u.UserName << ' ' << u.name << ' ' << u.MailAdr << ' '
          << u.privilege << endl;
 }
@@ -155,47 +151,47 @@ void System::modify_profile() {
     String target_username;
     bool qualified = true;
     User tmp;
-    bool isg=0,isp=0,isn=0,ism=0;
+    bool isg = 0, isp = 0, isn = 0, ism = 0;
     while (key != '\n') {
         String str;
         if (key != 'g') str = input.GetString();
         if (key == 'p') {
             tmp.PassWord = str;
-            isp=1;
+            isp = 1;
         } else if (key == 'n') {
             tmp.name = str;
-            isn=1;
+            isn = 1;
         } else if (key == 'm') {
             tmp.MailAdr = str;
-            ism=1;
+            ism = 1;
         } else if (key == 'g') {
             int pri = input.GetInteger();
             tmp.privilege = pri;
-            isg=1;
-        }else if(key=='u')
-        {
-            target_username=str;
-        }else if(key=='c')
-        {
-            cur_username=str;
+            isg = 1;
+        } else if (key == 'u') {
+            target_username = str;
+        } else if (key == 'c') {
+            cur_username = str;
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     User original_user = user_system.find_user(target_username);
     if (original_user == User()) throw -1;
     User cur_user = user_system.find_user(cur_username);
-    if(cur_user==User()) throw -1;
-    if(!cur_user.logged_in) throw -1;
+    if (cur_user == User()) throw -1;
+    if (!cur_user.logged_in) throw -1;
     User target_user = original_user;
     if (isp) target_user.PassWord = tmp.PassWord;
     if (isn) target_user.name = tmp.name;
     if (ism) target_user.MailAdr = tmp.MailAdr;
     if (isg) target_user.privilege = tmp.privilege;
-    if(original_user!=target_user&&original_user.privilege<=target_user.privilege) throw -1;
-    if(target_user.privilege>=cur_user.privilege) throw -1;
+    if (original_user != target_user &&
+        original_user.privilege <= target_user.privilege)
+        throw -1;
+    if (target_user.privilege >= cur_user.privilege) throw -1;
     user_system.modify_user(original_user.UserName, target_user);
-    cout << target_user.UserName << ' ' << target_user.name << ' ' << target_user.MailAdr << ' '
-         << target_user.privilege << endl;
+    cout << target_user.UserName << ' ' << target_user.name << ' '
+         << target_user.MailAdr << ' ' << target_user.privilege << endl;
 }
 
 void System::add_train() {
@@ -228,7 +224,7 @@ void System::add_train() {
         } else if (key == 'y') {
             new_train.type = input.GetChar();
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     new_train.initialise();
     // std::cerr<<"QUES??:"<<new_train.seatNum<<'\n';
@@ -250,8 +246,8 @@ void System::release_train() {
     if (t == Train()) throw -1;
     // std::cerr<<"releasing train "<<train_id<<endl;
     if (!train_system.release_train(train_id)) throw -1;
-    std::cerr<<"released\n";
-    Train new_t=train_system.find_train(train_id);
+    // std::cerr << "released\n";
+    Train new_t = train_system.find_train(train_id);
     ticket_system.add_ticket(new_t);
     // std::cerr<<"wtf\n";
     cout << 0 << endl;
@@ -259,18 +255,15 @@ void System::release_train() {
 
 void System::query_train() {
     char key = input.GetKey();
-    String train_id;int date;
-    while(key!='\n')
-    {
-        if(key=='i')
-        {
-            train_id=input.GetString();
+    String train_id;
+    int date;
+    while (key != '\n') {
+        if (key == 'i') {
+            train_id = input.GetString();
+        } else if (key == 'd') {
+            date = input.GetDate();
         }
-        else if(key=='d')
-        {
-            date=input.GetDate();
-        }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     Train train = train_system.find_train(train_id);
     // std::cerr<<"found"<<train.ID<<endl;
@@ -279,7 +272,8 @@ void System::query_train() {
     int time = train.startTime;
     int price = 0;
     // std::cerr<<date<<'\n';
-    // std::cerr<<"station num:"<<train.stationNum<<' '<<train.stopoverTimes.size()<<endl;
+    // std::cerr<<"station num:"<<train.stationNum<<'
+    // '<<train.stopoverTimes.size()<<endl;
     for (int i = 0; i < train.stationNum; i++) {
         String arr_time, leave_time;
         if (i == 0)
@@ -291,12 +285,12 @@ void System::query_train() {
         // std::cerr<<"OK!"<<train.stations[i]<<endl;
         if (i == train.stationNum - 1)
             leave_time = "xx-xx xx:xx";
-        else if(i==0)
+        else if (i == 0)
             leave_time = train.realTime(time, date);
-        else
-        {
-            leave_time = train.realTime(time + train.stopoverTimes[i-1], date);
-            time += train.stopoverTimes[i-1];
+        else {
+            leave_time =
+                train.realTime(time + train.stopoverTimes[i - 1], date);
+            time += train.stopoverTimes[i - 1];
         }
         // std::cerr<<"OK!"<<train.stations[i]<<endl;
         int res_seat = (i == train.stationNum - 1)
@@ -310,7 +304,6 @@ void System::query_train() {
             cout << res_seat << endl;
         } else
             cout << 'x' << endl;
-        
     }
 }
 void System::query_ticket() {
@@ -332,7 +325,7 @@ void System::query_ticket() {
             else
                 cmp_type = PRICE;
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     if (!ticket_system.query_ticket(from_station, to_station, date, cmp_type))
         throw -1;
@@ -357,7 +350,7 @@ void System::query_transfer_ticket() {
             else
                 cmp_type = PRICE;
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     if (!ticket_system.query_transfer_ticket(from_station, to_station, date,
                                              cmp_type))
@@ -387,33 +380,32 @@ void System::buy_ticket() {
             String c = input.GetString();
             if (c == (string)("true")) if_wait = true;
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
     User find_user = user_system.find_user(user_id);
     if (find_user == User()) throw -1;
-    if(!find_user.logged_in) throw -1;
+    if (!find_user.logged_in) throw -1;
     // cerr<<"find user"<<user_id<<endl;
     if (!train_system.find_train(ticket.trainID).is_released()) throw -1;
-    ticket.train = train_system.find_train(ticket.trainID);
+    ;
     // std::cerr<<"release found"<<endl;
-    order result(ticket, num, user_id,"");
+    order result(ticket, num, user_id, "");
     // std::cerr<<"here\n";
-    if (!ticket_system.buy_ticket(ticket, num, if_wait, result, user_id))
+    Train tr = train_system.find_train(ticket.trainID);
+    if (!ticket_system.buy_ticket(tr, ticket, num, if_wait, result, user_id))
         throw -1;
-    order temp_order=user_system.add_ticket(user_id,ticket,num,result.status);
-    if(temp_order==order()) throw -1;
-    if(result.status=="success")
-    {
-        Train tr=ticket.train;
-        tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date, num);
+    order temp_order =
+        user_system.add_ticket(user_id, ticket, num, result.status);
+    if (temp_order == order()) throw -1;
+    if (result.status == "success") {
+        tr.update_seat_res(ticket.from_station, ticket.to_station, ticket.date,
+                           num);
         train_system.train_tree.erase(ticket.trainID, tr);
         train_system.train_tree.insert(ticket.trainID, tr);
-    }else if(result.status=="queue")
-    {
+    } else if (result.status == "queue") {
         ticket_system.waiting_list.push_back(temp_order);
     }
     // cout << result.status << endl;
-    
 }
 
 void System::refund_ticket() {
@@ -427,48 +419,56 @@ void System::refund_ticket() {
         } else if (key == 'n') {
             num = input.GetInteger();
         }
-        key=input.GetKey();
+        key = input.GetKey();
     }
-     --num;
+    --num;
     order refunded_order = user_system.refund_ticket(user_id, num);
     if (refunded_order == order()) throw -1;
-   
+
     // std::cerr<<"here\n";
     user_system.modify_order(refunded_order, "refunded");
-    Train refund_train=refunded_order.ticket.train;
-    refund_train.update_seat_res(refunded_order.ticket.from_station, refunded_order.ticket.to_station, refunded_order.ticket.date, -refunded_order.num);
+    Train refund_train = train_system.find_train(refunded_order.ticket.trainID);
+    refund_train.update_seat_res(
+        refunded_order.ticket.from_station, refunded_order.ticket.to_station,
+        refunded_order.ticket.date, -refunded_order.num);
     train_system.train_tree.erase(refunded_order.ticket.trainID, refund_train);
     train_system.train_tree.insert(refunded_order.ticket.trainID, refund_train);
     // order result =
-    //     ticket_system.refund_ticket(refunded_order.ticket, refunded_order.num);
+    //     ticket_system.refund_ticket(refunded_order.ticket,
+    //     refunded_order.num);
     order result;
-    // std::cerr<<"waiting_list size: "<<ticket_system.waiting_list.size()<<endl;
-    for (auto it = ticket_system.waiting_list.begin(); it != ticket_system.waiting_list.end();) {
-       Train tr=train_system.find_train(it->ticket.trainID);
-        int seat_res=tr.get_seat_res(it->ticket.from_station,it->ticket.to_station,
-                                    it->ticket.date);
-        // std::cerr<<"checking waiting ticket "<<it->ticket.trainID<<' '<<it->ticket.from_station<<' '<<it->ticket.to_station<<' '<<it->ticket.date<<endl;
-        // std::cerr<<"seat res for waiting ticket "<<seat_res<<endl;
-        if(seat_res>=it->num)
-        {
-            // std::cerr<<"found waiting ticket can be processed "<<it->ticket.trainID<<' '<<it->ticket.from_station<<' '<<it->ticket.to_station<<' '<<it->ticket.date<<endl;
-            result= *it;
-            result.status="success";
+    // std::cerr<<"waiting_list size:
+    // "<<ticket_system.waiting_list.size()<<endl;
+    for (auto it = ticket_system.waiting_list.begin();
+         it != ticket_system.waiting_list.end();) {
+        Train tr = train_system.find_train(it->ticket.trainID);
+        int seat_res = tr.get_seat_res(it->ticket.from_station,
+                                       it->ticket.to_station, it->ticket.date);
+        // std::cerr<<"checking waiting ticket "<<it->ticket.trainID<<'
+        // '<<it->ticket.from_station<<' '<<it->ticket.to_station<<'
+        // '<<it->ticket.date<<endl; std::cerr<<"seat res for waiting ticket
+        // "<<seat_res<<endl;
+        if (seat_res >= it->num) {
+            // std::cerr<<"found waiting ticket can be processed
+            // "<<it->ticket.trainID<<' '<<it->ticket.from_station<<'
+            // '<<it->ticket.to_station<<' '<<it->ticket.date<<endl;
+            result = *it;
+            result.status = "success";
             ticket_system.waiting_list.erase(it);
             break;
-        }
-        else
-        {
+        } else {
             ++it;
         }
     }
     // std::cerr<<"after processing waiting list\n";
-    if (!(result == order())) 
-    {
-        // std::cerr<<"processing waiting ticket "<<result.ticket.trainID<<' '<<result.ticket.from_station<<' '<<result.ticket.to_station<<' '<<result.ticket.date<<endl;
+    if (!(result == order())) {
+        // std::cerr<<"processing waiting ticket "<<result.ticket.trainID<<'
+        // '<<result.ticket.from_station<<' '<<result.ticket.to_station<<'
+        // '<<result.ticket.date<<endl;
         user_system.modify_order(result, "success");
-        Train tr=result.ticket.train;
-        tr.update_seat_res(result.ticket.from_station, result.ticket.to_station, result.ticket.date, result.num);
+        Train tr = train_system.find_train(result.ticket.trainID);
+        tr.update_seat_res(result.ticket.from_station, result.ticket.to_station,
+                           result.ticket.date, result.num);
         train_system.train_tree.erase(result.ticket.trainID, tr);
         train_system.train_tree.insert(result.ticket.trainID, tr);
     }
@@ -483,8 +483,10 @@ void System::query_order() {
     if (!user_system.query_ordered_tickets(user_id)) throw -1;
 }
 
+
+
 void System::clean() {
-    user_cnt=0;
+    user_cnt = 0;
     train_system.clean_up();
     user_system.clean_up();
     ticket_system.clean_up();
@@ -493,4 +495,5 @@ void System::clean() {
     TODO: clean all data files & cache
     */
 }
+
 }  // namespace sjtu

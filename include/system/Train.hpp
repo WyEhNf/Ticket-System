@@ -6,7 +6,7 @@
 using namespace std;
 namespace sjtu {
 class Train {
-   private:
+    public:
     char type;
     String ID;
     bool released=false;
@@ -21,7 +21,7 @@ class Train {
     friend class TicketSystem;
     friend class System;
 
-   public:
+  
     Train() = default;
     Train(char type, String ID, int stationNum, int seatNum, int startTime,
           int sale_begin, int sale_end, vector<String> stations,
@@ -152,6 +152,7 @@ class Train {
         int time = startTime;
         if (stations[0] == station) return realTime(time, date);
         for (int i = 1; i < stationNum; i++) {
+            // std::cerr<<"station "<<stations[i]<<endl;
             time += travelTimes[i - 1];
             if (stations[i] == station) return realTime(time, date);
             if (i != stationNum - 1) time += stopoverTimes[i - 1];
