@@ -194,7 +194,8 @@ void System::modify_profile() {
     if(original_user!=target_user&&original_user.privilege<=target_user.privilege) throw -1;
     if(target_user.privilege>=cur_user.privilege) throw -1;
     user_system.modify_user(original_user.UserName, target_user);
-    cout << 0 << endl;
+    cout << target_user.UserName << ' ' << target_user.name << ' ' << target_user.MailAdr << ' '
+         << target_user.privilege << endl;
 }
 
 void System::add_train() {
