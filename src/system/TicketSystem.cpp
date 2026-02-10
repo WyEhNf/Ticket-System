@@ -175,7 +175,7 @@ bool TicketSystem::buy_ticket(Train &tr, Ticket& ticket, int num, bool if_wait,
             result.ticket=ticket;
             result.num=num; 
             result.UserID=UserID;
-            result.status="queue";
+            result.status="pending";
             cout<<"queue"<<std::endl;
             return true;
         }

@@ -87,6 +87,7 @@ order UserSystem::refund_ticket(String user_id, int pos) {
     User u = res[0].value;
     if(!u.logged_in) return order();
     if (pos < 0 || pos >= (int)u.bought_tickets.size()) return order();
+    pos=(int)u.bought_tickets.size()-1-pos;
     order target = u.bought_tickets[pos];
     // u.bought_tickets.erase(u.bought_tickets.begin() + pos);
     u.bought_tickets[pos].status="refunded";
