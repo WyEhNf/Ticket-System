@@ -6,22 +6,22 @@
 using namespace std;
 namespace sjtu {
 class Train {
-    public:
+   public:
     char type;
     String ID;
-    bool released=false;
+    bool released = false;
     int stationNum, seatNum;
     int startTime, sale_begin, sale_end;
     vector<String> stations;
     vector<vector<int> > seat_res;
     vector<int> prices, travelTimes, stopoverTimes;
+    vector<int> date;
     friend class Ticket;
     friend class TrainSystem;
     friend class UserSystem;
     friend class TicketSystem;
     friend class System;
 
-  
     Train() = default;
     Train(char type, String ID, int stationNum, int seatNum, int startTime,
           int sale_begin, int sale_end, vector<String> stations,
@@ -37,7 +37,7 @@ class Train {
           stations(stations),
           prices(prices),
           travelTimes(travelTimes),
-          stopoverTimes(stopoverTimes) { ;
+          stopoverTimes(stopoverTimes) {
     }
     Train(const Train& other)
         : type(other.type),
@@ -51,7 +51,9 @@ class Train {
           prices(other.prices),
           travelTimes(other.travelTimes),
           seat_res(other.seat_res),
-          stopoverTimes(other.stopoverTimes),released(other.released){
+          stopoverTimes(other.stopoverTimes),
+          released(other.released),
+          date(other.date) {
     }
     ~Train() = default;
     Train& operator=(const Train& other) {
@@ -65,17 +67,20 @@ class Train {
         stopoverTimes = other.stopoverTimes;
         seat_res = other.seat_res;
         released = other.released;
-
+        date = other.date;
         return *this;
     }
     void initialise() {
-        // vector<int> seat_row;
-        // for (int i = 0; i < stationNum - 1; i++) {
-        //     seat_row.push_back(seatNum);
-        // }
-        // for (int i = 0; i < sale_end - sale_begin + 1; i++) {
-        //     seat_res.push_back(seat_row);
-        // }
+        int time = startTime;
+        int base = startTime;
+        date.push_back(0);
+        for (int i = 1; i < stationNum; i++) {
+            time += travelTimes[i - 1];
+            if (i != stationNum - 1) time += stopoverTimes[i - 1];
+            date.push_back((time / 1440 - base / 1440));
+        }
+        // for(auto x:date) cout<<x<<' ';
+        // cout<<'\n';
     }
     bool operator==(const Train& other) const {
         return ID == other.ID;
@@ -148,14 +153,15 @@ class Train {
         int realtime = time % 1440;
         return int_to_date(realdate) + " " + int_to_time(realtime);
     }
-    String getTime(String station, int date) {
+    String getTime(String station, int date,bool isArrive=1) {
         int time = startTime;
         if (stations[0] == station) return realTime(time, date);
         for (int i = 1; i < stationNum; i++) {
             // std::cerr<<"station "<<stations[i]<<endl;
             time += travelTimes[i - 1];
-            if (stations[i] == station) return realTime(time, date);
+            if (stations[i] == station&&!isArrive) return realTime(time, date);
             if (i != stationNum - 1) time += stopoverTimes[i - 1];
+             if (stations[i] == station&&isArrive) return realTime(time, date);
         }
         return String("error!");
     }

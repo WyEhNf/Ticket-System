@@ -14,8 +14,11 @@ void remove_data_file() {
 int main()
 {
     // freopen("my.out","w",stdout);
+    clock_t START=clock();
     remove_data_file();
     sjtu::System sys("ticket_system");
     sys.run();
+    clock_t END=clock();
+    // std::cerr<<"Total Time: "<<(double)(END-START)/CLOCKS_PER_SEC<<'\n';
     return 0;
 }

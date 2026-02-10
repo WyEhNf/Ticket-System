@@ -58,10 +58,10 @@ bool UserSystem::query_ordered_tickets(const String& user_id) {
     User u = res[0].value;
     if(!u.logged_in) return false;
     cout<<u.bought_tickets.size()<<endl;
-    for (size_t i = 0; i < u.bought_tickets.size(); i++) {
+    for (int i = u.bought_tickets.size()-1; i >= 0; i--) {
         order t = u.bought_tickets[i];
         cout<<"["<<t.status<<"] ";
-        t.ticket.printTicket(t.ticket.from_station, t.ticket.to_station);
+        t.ticket.printTicket(t.ticket.from_station, t.ticket.to_station,t.num);
       /*
       TODO: print order information
       */

@@ -96,7 +96,7 @@ class Ticket {
     }
 
     void printTicket(String from_station,
-                     String to_station) {
+                     String to_station,int num=-1) {
         Train tr=ptr->find_train(trainID);
         // if(tr==Train()) 
         // {
@@ -105,9 +105,9 @@ class Ticket {
         // }
         cout << tr.ID << ' ' << from_station << ' '
              << tr.getTime(from_station, date) << " -> "
-             << to_station << ' ' << tr.getTime(to_station, date)
+             << to_station << ' ' << tr.getTime(to_station, date,0)
              << ' ' << getPrice() << ' '
-             << tr.get_seat_res(from_station, to_station, date) << endl;
+             << (num == -1 ? tr.get_seat_res(from_station, to_station, date) : num) << endl;
     }
 
     String getID() const {

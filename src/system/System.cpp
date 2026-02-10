@@ -274,6 +274,7 @@ void System::query_train() {
     // std::cerr<<date<<'\n';
     // std::cerr<<"station num:"<<train.stationNum<<'
     // '<<train.stopoverTimes.size()<<endl;
+    cout<<train.ID<<' '<<train.type<<endl;
     for (int i = 0; i < train.stationNum; i++) {
         String arr_time, leave_time;
         if (i == 0)
@@ -392,6 +393,14 @@ void System::buy_ticket() {
     order result(ticket, num, user_id, "");
     // std::cerr<<"here\n";
     Train tr = train_system.find_train(ticket.trainID);
+    int pos=-1;
+    for(int i=0;i<tr.stationNum-1;i++)
+    {
+        if(tr.stations[i]==ticket.from_station) pos=i;
+    }
+    if(pos==-1) throw -1;
+    // cerr<<"!!"<<pos<<'\n';
+    ticket.date-=tr.date[pos];
     if (!ticket_system.buy_ticket(tr, ticket, num, if_wait, result, user_id))
         throw -1;
     order temp_order =

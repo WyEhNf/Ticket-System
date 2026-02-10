@@ -8,9 +8,12 @@ bool TicketSystem::add_ticket(const Train& train) {
     // std::cerr<<"here!!\n";
     // clock_t S=clock();
     int cnt=0;
+
+    // std:cerr<<train.date.size()<<' '<<train.stationNum<<'\n';
+
     for (int day = train.sale_begin; day <= train.sale_end; day++) {
         for (int i = 0; i < train.stationNum - 1; i++) {
-            TicketKey key{day, train.stations[i]};
+            TicketKey key{day+train.date[i], train.stations[i]};
             for(int j=i+1;j<train.stationNum;j++)
             {
                 // std::cerr<<"!!"<<train.seat_res.size()<<'\n';
@@ -41,7 +44,7 @@ bool TicketSystem::Compare_with_cost(
 bool TicketSystem::Compare_with_time(
     BPlusTree<TicketKey, Ticket>::Key& A,
     BPlusTree<TicketKey, Ticket>::Key& B) {
-    if (A.value.getPrice() == B.value.getPrice()) {
+    if (A.value.getTime() == B.value.getTime()) {
         return A.value.trainID < B.value.trainID;
     }
     return A.value.getTime() < B.value.getTime();
@@ -57,7 +60,7 @@ bool TicketSystem::query_ticket(const String& from_station,
     // std::cerr<<"query ticket from "<<from_station<<' '<<to_station<<' '<<date<<endl;
     // std::cerr<<"low res size "<<low_res.size()<<endl;
     // std::cerr<<low_res.size()<<endl;
-    if (low_res.size() == 0) return false;
+    if (low_res.size() == 0) {cout<<0<<'\n'; return true;}
     if (cmp_type == PRICE)
         low_res.sort(Compare_with_cost);
     else if (cmp_type == TIME)
@@ -71,7 +74,7 @@ bool TicketSystem::query_ticket(const String& from_station,
             final_res.push_back(low_res[i]);
         }
     }
-    if (final_res.empty()) return false;
+    if (final_res.empty()) {cout<<0<<'\n'; return true;}
     cout << final_res.size() << endl;
     for (auto& item : final_res) {
         Ticket t = item.value;
@@ -85,7 +88,7 @@ bool TicketSystem::query_transfer_ticket(const String& from_station,
                                          CompareType cmp_type) {
     TicketKey low_key{date, from_station};
     auto low_res = ticket_tree.find(low_key);
-    if (low_res.size() == 0) return false;
+    if (low_res.size() == 0) {cout<<0<<'\n'; return true;}
     vector<pair<BPlusTree<TicketKey, Ticket>::Key,
                 BPlusTree<TicketKey, Ticket>::Key>>
         final_res;
@@ -100,7 +103,7 @@ bool TicketSystem::query_transfer_ticket(const String& from_station,
             }
         }
     }
-    if (final_res.empty()) return false;
+    if (final_res.empty()) {cout<<0<<'\n'; return true;}
     pair<BPlusTree<TicketKey, Ticket>::Key, BPlusTree<TicketKey, Ticket>::Key>
         ans = final_res[0];
     for (int i = 1; i < final_res.size(); i++) {
@@ -157,6 +160,7 @@ bool TicketSystem::buy_ticket(Train &tr, Ticket& ticket, int num, bool if_wait,
     // std::cerr<<ticket.trainID<<' '<<num<<' '<<UserID<<'\n';
     
     // std::cerr<<tr.seat_res.size()<<endl;
+    if(ticket.date<tr.sale_begin||ticket.date>tr.sale_end) return false;
     int seat_res=tr.get_seat_res(ticket.from_station,ticket.to_station,
                                     ticket.date);
     // std::cerr<<"seat res "<<seat_res<<endl;
