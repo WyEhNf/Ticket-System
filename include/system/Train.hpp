@@ -113,6 +113,7 @@ class Train {
             if (stations[i] == from_station) from = i;
             if (stations[i] == to_station) to = i;
         }
+        // std::cerr<<from<<' '<<to<<'\n';
         // std::cerr<<day_index<<'\n';
         // std::cerr << "get_seat_res " << from << ' ' << to << ' ' << day_index
         //           << ' ' << seat_res.size() << endl;

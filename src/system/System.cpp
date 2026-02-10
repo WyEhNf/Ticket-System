@@ -294,10 +294,12 @@ void System::query_train() {
             time += train.stopoverTimes[i - 1];
         }
         // std::cerr<<"OK!"<<train.stations[i]<<endl;
-        int res_seat = (i == train.stationNum - 1)
-                           ? 0
-                           : train.get_seat_res(train.stations[i],
+        int res_seat ;
+        if(i == train.stationNum - 1)res_seat=0;
+        else if(!train.is_released()) res_seat=train.seatNum;
+        else res_seat=train.get_seat_res(train.stations[i],
                                                 train.stations[i + 1], date);
+        // cerr<<"HERE!\n";
         cout << train.stations[i] << ' ' << arr_time << " -> " << leave_time
              << ' ' << price << ' ';
         if (i != train.stationNum - 1) {
