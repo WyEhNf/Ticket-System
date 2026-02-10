@@ -15,9 +15,9 @@ void remove_data_file() {
 int main()
 {
     // freopen("my.out","w",stdout);
-    ios::sync_with_stdio(false);
-    cin.tie(0);
-    cout.tie(0);
+    // ios::sync_with_stdio(false);
+    // cin.tie(0);
+    // cout.tie(0);
     clock_t START=clock();
     remove_data_file();
     sjtu::System sys("ticket_system");
