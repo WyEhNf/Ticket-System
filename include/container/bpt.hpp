@@ -7,7 +7,7 @@
 
 using namespace std;
 namespace sjtu {
-template <typename IndexType, typename ValueType, int ORDER =32>
+template <typename IndexType, typename ValueType, int ORDER =16>
 class BPlusTree {
    public:
     struct Key {
