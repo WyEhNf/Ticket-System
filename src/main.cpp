@@ -1,3 +1,4 @@
+#pragma GCC optimize("Ofast")
 #include "../include/system/System.hpp"
 using namespace std;
 void remove_data_file() {
@@ -14,6 +15,8 @@ void remove_data_file() {
 int main()
 {
     // freopen("my.out","w",stdout);
+    ios::sync_with_stdio(false);
+    cin.tie(0);
     clock_t START=clock();
     remove_data_file();
     sjtu::System sys("ticket_system");
