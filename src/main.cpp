@@ -14,7 +14,7 @@ void remove_data_file() {
 }
 int main()
 {
-    // freopen("my.out","w",stdout);
+    // freopen("8.in","r",stdin);
     // ios::sync_with_stdio(false);
     // cin.tie(0);
     // cout.tie(0);
