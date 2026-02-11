@@ -49,8 +49,21 @@ void System::run() {
             } else if (command == "clean") {
                 clean();
             } else if (command == "exit") {
+
+                for(auto &user_id: logged_in_users)
+                {
+                    user_system.logout(user_id);
+                }
+                logged_in_users.clear();
                 std::cout << "bye" << std::endl;
                 break;
+            }else if(command=="test"){
+                // for testing purpose
+                for(auto &user_id: logged_in_users)
+                {
+                    user_system.logout(user_id);
+                }
+                logged_in_users.clear();
             }
         } catch (int) {
             cout << "-1" << endl;
@@ -113,6 +126,7 @@ void System::login() {
     }
     // cout<<"login "<<user_id<<' '<<password<<endl;
     if (!user_system.login(user_id, password)) throw -1;
+    logged_in_users.push_back(user_id);
     cout << 0 << endl;
 }
 

@@ -12,6 +12,7 @@ namespace sjtu {
         UserSystem user_system;
         Input input;;
         int timestamp=0,user_cnt=0;
+        vector<String> logged_in_users;
 
     public:
         ~System() = default;
