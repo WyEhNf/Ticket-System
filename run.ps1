@@ -1,123 +1,104 @@
-param (
-    [string]$TestcaseGroupName
-)
-
-# ================= 工具函数 =================
-
-function Normalize-Lines {
-    param ([string[]]$Lines)
-    return $Lines `
-        | ForEach-Object { $_.TrimEnd() } `
-        | Where-Object { $_ -ne "" }
-}
-
-function Compare-Output {
-    param (
-        [string]$FileA,
-        [string]$FileB
-    )
-
-    $a = Normalize-Lines (Get-Content $FileA)
-    $b = Normalize-Lines (Get-Content $FileB)
-
-    if ($a.Count -ne $b.Count) {
-        return $false
-    }
-
-    for ($i = 0; $i -lt $a.Count; $i++) {
-        if ($a[$i] -ne $b[$i]) {
-            return $false
-        }
-    }
-    return $true
-}
-
-function New-TmpFile {
-    [System.IO.Path]::GetTempFileName()
-}
-
-function New-TmpDir {
-    $dir = Join-Path $env:TEMP ("ticket." + [System.Guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Path $dir | Out-Null
-    return $dir
-}
-
-# ================= 参数检查 =================
-
-if (-not $TestcaseGroupName) {
-    Write-Host "Usage: .\run-tests.ps1 <testcase_group_name>"
+# 检查参数
+if ($args.Count -eq 0) {
+    Write-Host "Usage: script.ps1 <testcase_group_name>"
     Write-Host "Available testcase groups from config.json:"
-    (Get-Content testcases/config.json | ConvertFrom-Json).Groups.GroupName |
-        ForEach-Object { Write-Host "  $_" }
+    $groups = (Get-Content -Path "testcases\config.json" | ConvertFrom-Json).Groups
+    $groups | ForEach-Object { Write-Host "  $_.GroupName" }
     exit 1
 }
 
-if (-not (Test-Path "testcases/config.json")) {
+# 检查 config.json 文件是否存在
+if (-not (Test-Path -Path "testcases\config.json")) {
     Write-Host "./testcases/config.json does not exist, please extract testcases to that directory."
     exit 1
 }
 
-# ================= 读取 config.json =================
+# 检查 jq 是否安装 (通过检查 PowerShell 是否可以正确解析 JSON)
+try {
+    $config = Get-Content -Path "testcases\config.json" | ConvertFrom-Json
+} catch {
+    Write-Host "Failed to parse config.json. Ensure it's a valid JSON file."
+    exit 1
+}
 
-$config = Get-Content testcases/config.json | ConvertFrom-Json
-$group = $config.Groups | Where-Object { $_.GroupName -eq $TestcaseGroupName }
+# 检查是否有对应的 testcase group
+$groupName = $args[0]
+$group = $config.Groups | Where-Object { $_.GroupName -eq $groupName }
 
 if (-not $group) {
-    Write-Host "Testcase group '$TestcaseGroupName' not found in config.json"
+    Write-Host "Testcase group '$groupName' not found in config.json"
     Write-Host "Available testcase groups:"
-    $config.Groups.GroupName | ForEach-Object { Write-Host "  $_" }
+    $config.Groups | ForEach-Object { Write-Host "  $_.GroupName" }
     exit 1
 }
 
+# 获取测试点列表
 $list = $group.TestPoints
 
-# ================= 检查可执行文件 =================
-
-$exename = "code.exe"
-if (-not (Test-Path $exename)) {
-    Write-Host "Please compile the ticket system and place the executable at '$exename'"
+# 检查编译好的可执行文件
+$exeName = "code.exe"
+if (-not (Test-Path -Path $exeName)) {
+    Write-Host "Please compile the ticket system and place the executable at '$exeName'"
     exit 1
 }
 
-# ================= 测试准备 =================
+# 创建临时文件
+function Get-TempFile {
+    return [System.IO.Path]::GetTempFileName()
+}
 
-$testdir = New-TmpDir
-Copy-Item $exename $testdir
-$exe = Join-Path $testdir $exename
+# 创建临时目录
+function Get-TempDir {
+    $tempDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ticket" + [System.Guid]::NewGuid().ToString())
+    New-Item -Path $tempDir -ItemType Directory
+    return $tempDir
+}
+
+# 设置临时目录
+$testDir = Get-TempDir
+Copy-Item -Path $exeName -Destination $testDir
+$exePath = Join-Path -Path $testDir -ChildPath $exeName
 $cwd = Get-Location
-$basedir = Join-Path $cwd "testcases"
+$baseDir = Join-Path -Path $cwd -ChildPath "testcases"
 
-Set-Location $testdir
+# 切换到临时目录
+Set-Location -Path $testDir
 
-# ================= 主测试循环 =================
-
+# 运行每个测试点
 foreach ($i in $list) {
+    $inputFile = Join-Path -Path $baseDir -ChildPath "$i.in"
+    $outputFile = Join-Path -Path $testDir -ChildPath (Get-TempFile)
+    $expectedOutputFile = Join-Path -Path $baseDir -ChildPath "$i.out"
+    
     Write-Host "About to run input #$i..."
 
-    $outfile = New-TmpFile
+    # 读取输入文件内容
+    $inputContent = Get-Content -Path $inputFile
 
-    Measure-Command {
-        Get-Content "$basedir\$i.in" | & $exe | Set-Content $outfile
-    } | Out-Null
+    # 执行程序并获取输出
+    $outputContent = & $exePath $inputContent
 
-    $expected = "$basedir\$i.out"
+    # 将程序输出写入临时输出文件
+    Set-Content -Path $outputFile -Value $outputContent
 
-    if (-not (Compare-Output $outfile $expected)) {
-        Get-Content $outfile | Select-Object -First 5
-        $timestamp = Get-Date -UFormat %s
-        $backup = "test-$TestcaseGroupName-$i-$timestamp.log"
-        Copy-Item $outfile (Join-Path $cwd $backup)
+    # 比较输出
+    $diffFile = Get-TempFile
+    $diffResult = Compare-Object -ReferenceObject (Get-Content -Path $outputFile) -DifferenceObject (Get-Content -Path $expectedOutputFile)
+
+    if ($diffResult) {
+        $diffResult | Select-Object -First 5 | ForEach-Object { Write-Host $_ }
+        $backup = "test-$groupName-$i-$(Get-Date -Format 'yyyyMMddHHmmss').log"
+        Copy-Item -Path $outputFile -Destination (Join-Path -Path $cwd -ChildPath $backup)
         Write-Host "Test failed on input #$i."
         Write-Host "Output saved to $backup"
         exit 1
     }
 
-    Remove-Item $outfile
+    Remove-Item -Path $outputFile
+    Remove-Item -Path $diffFile
 }
 
-# ================= 清理 =================
 
-Set-Location $cwd
-Remove-Item $testdir -Recurse -Force
-
+# 清理临时目录
+Remove-Item -Path $testDir -Recurse -Force
 Write-Host "Testcase complete, answer correct."
