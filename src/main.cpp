@@ -20,7 +20,7 @@ int main()
     // cin.tie(0);
     // cout.tie(0);
     clock_t START=clock();
-    // remove_data_file();
+    remove_data_file();
     sjtu::System sys("ticket_system");
     sys.run();
     clock_t END=clock();

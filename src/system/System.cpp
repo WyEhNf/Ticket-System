@@ -13,7 +13,7 @@ System::System(const std::string& name)
 
 }
 void System::run() {
-    while (!cin.eof()) {
+    while (true) {
         try {
             timestamp = input.GetTimestamp();
             string command = input.GetCommand();
