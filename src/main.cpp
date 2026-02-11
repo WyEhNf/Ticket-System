@@ -14,12 +14,13 @@ void remove_data_file() {
 }
 int main()
 {
+    // setlocale(LC_ALL, "zh_CN.UTF-8"); 
     // freopen("8.in","r",stdin);
     // ios::sync_with_stdio(false);
     // cin.tie(0);
     // cout.tie(0);
     clock_t START=clock();
-    remove_data_file();
+    // remove_data_file();
     sjtu::System sys("ticket_system");
     sys.run();
     clock_t END=clock();
